@@ -11,7 +11,7 @@ const Crawler = (() => {
   var curatedDomains = [];
 
   return {
-    loadCuratedDomains: (() => {
+    loadCuratedDomains: () => {
       const url = chrome.runtime.getURL('../../assets/data/hn-top-domains.json');
       fetch(url).then(response => {
         response.json().then(data => {
@@ -19,12 +19,12 @@ const Crawler = (() => {
           console.log("Loaded curated domains", curatedDomains);
         });
       });
-    }),
+    },
 
-    chooseDomain: (() => {
+    chooseDomain: () => {
       time = new Date().getTime();
       return curatedDomains[time % curatedDomains.length];
-    })
+    }
   }
 
 })();
@@ -49,6 +49,7 @@ function runCrawlIteration() {
       links = storageResult.links;
     }
     console.log("Links", links);
+
 
   });
 
