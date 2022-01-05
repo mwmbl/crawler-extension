@@ -18,25 +18,23 @@ class Crawler {
     this.curatedDomains = [];
   }
 
-  loadCuratedDomains() {
+  async loadCuratedDomains() {
     const url = chrome.runtime.getURL('../../assets/data/hn-top-domains.json');
-    fetch(url).then(response => {
-      response.json().then(data => {
-        this.curatedDomains = Object.keys(data);
-        console.log("Loaded curated domains", this.curatedDomains);
-      });
-    });
+    const response = await fetch(url);
+    const data = await response.json();
+    this.curatedDomains = Object.keys(data);
+    console.log("Loaded curated domains", this.curatedDomains);
   }
 
   chooseDomain() {
-    time = new Date().getTime();
+    const time = new Date().getTime();
     return this.curatedDomains[time % this.curatedDomains.length];
   }
 
   setUp() {
     console.log("Starting up crawler extension");
     this.loadCuratedDomains();
-    setInterval(this.runCrawlIteration, 1000);
+    setInterval(this.runCrawlIteration.bind(this), 1000);
   }
 
   runCrawlIteration() {
