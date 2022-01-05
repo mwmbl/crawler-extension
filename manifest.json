@@ -14,5 +14,6 @@
     "48": "./assets/images/get_started48.png",
     "128": "./assets/images/get_started128.png"
   },
-  "options_page": "./dist/options/index.html"
+  "options_page": "./dist/options/index.html",
+  "host_permissions": ["https://*/", "http://*/"]
 }

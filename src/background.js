@@ -45,7 +45,22 @@ const Crawler = (() => {
           links = storageResult.links;
         }
         console.log("Links", links);
+
+        const chosenLink = links[links.length - 1];
+        Crawler.crawlURL(chosenLink);
       });
+    },
+
+    crawlURL: (url) => {
+      fetch(url).then(response => {
+        if (response.ok) {
+          response.text().then(responseText => {
+            console.log("Got response text", responseText);
+          })
+        } else {
+          console.log("Got bad response", response);
+        }
+      })
     }
   }
 })();
