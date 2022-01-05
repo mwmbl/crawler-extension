@@ -27,7 +27,7 @@ class Crawler {
   }
 
   chooseDomain() {
-    const time = new Date().getTime();
+    const time = Date.now();
     return this.curatedDomains[time % this.curatedDomains.length];
   }
 
