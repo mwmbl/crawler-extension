@@ -1,9 +1,9 @@
 chrome.runtime.onInstalled.addListener(() => {
-  setUp();
+  Crawler.setUp();
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  setUp();
+  Crawler.setUp();
 });
 
 
@@ -24,33 +24,28 @@ const Crawler = (() => {
     chooseDomain: () => {
       time = new Date().getTime();
       return curatedDomains[time % curatedDomains.length];
+    },
+
+    setUp: () => {
+      console.log("Starting up crawler extension");
+      Crawler.loadCuratedDomains();
+      setInterval(Crawler.runCrawlIteration, 1000);
+    },
+
+    runCrawlIteration: () => {
+      console.log("Running crawl iteration");
+
+      chrome.storage.local.get(["links"], storageResult => {
+        console.log("Got storage", storageResult);
+
+        var links;
+        if (Object.keys(storageResult).length == 0) {
+          links = ['https://' + Crawler.chooseDomain()];
+        } else {
+          links = storageResult.links;
+        }
+        console.log("Links", links);
+      });
     }
   }
-
 })();
-
-function setUp() {
-    console.log("Starting up crawler extension");
-    Crawler.loadCuratedDomains();
-    setInterval(runCrawlIteration, 1000);
-}
-
-
-function runCrawlIteration() {
-  console.log("Running crawl iteration");
-
-  chrome.storage.local.get(["links"], storageResult => {
-    console.log("Got storage", storageResult);
-
-    var links;
-    if (Object.keys(storageResult).length == 0) {
-      links = ['https://' + Crawler.chooseDomain()];
-    } else {
-      links = storageResult.links;
-    }
-    console.log("Links", links);
-
-
-  });
-
-}
