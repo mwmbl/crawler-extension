@@ -2,13 +2,14 @@ chrome.runtime.onInstalled.addListener(() => {
   run();
 });
 
+
 chrome.runtime.onStartup.addListener(() => {
   run();
 });
 
 
 function run() {
-  crawler = new Crawler();
+  const crawler = new Crawler();
   crawler.setUp();
 }
 
@@ -43,8 +44,8 @@ class Crawler {
     chrome.storage.local.get(["links"], storageResult => {
       console.log("Got storage", storageResult);
 
-      var links;
-      if (Object.keys(storageResult).length == 0) {
+      let links;
+      if (Object.keys(storageResult).length === 0) {
         links = ['https://' + this.chooseDomain()];
       } else {
         links = storageResult.links;
@@ -59,9 +60,8 @@ class Crawler {
   async crawlURL(url) {
     const response = await fetch(url);
     if (response.ok) {
-      response.text().then(responseText => {
-        console.log("Got response text", responseText);
-      })
+      const responseText = await response.text();
+      console.log("Got response text", responseText);
     } else {
       console.log("Got bad response", response);
     }
