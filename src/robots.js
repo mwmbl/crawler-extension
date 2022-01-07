@@ -195,6 +195,5 @@ export const canVisit = (url, userAgent, parsedRobots) => {
     return true;
   } else if (noAllows || (allow.maxSpecificity < disallow.maxSpecificity)) {
     return false;
-  }
-  return true;
+  }  return true;
 }
