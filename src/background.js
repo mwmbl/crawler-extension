@@ -1,24 +1,69 @@
-let color = '#3aa757';
-
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.sync.set({ color });
-  console.log('Default background color set to %cbanana', `color: ${color}`);
-  setUp();
+  run();
 });
+
 
 chrome.runtime.onStartup.addListener(() => {
-  setUp();
+  run();
 });
 
 
-function setUp() {
-    console.log("Starting up crawler extension");
-//    chrome.alarms.onAlarm.addListener(runCrawlIteration);
-//    chrome.alarms.create("crawlAlarm", {delayInMinutes: 1.0/60, periodInMinutes: 0.1});
-    setInterval(runCrawlIteration, 1000);
+function run() {
+  const crawler = new Crawler();
+  crawler.setUp();
 }
 
 
-function runCrawlIteration() {
-  console.log("Running crawl iteration");
+class Crawler {
+  constructor() {
+    this.curatedDomains = [];
+  }
+
+  async loadCuratedDomains() {
+    const url = chrome.runtime.getURL('../../assets/data/hn-top-domains.json');
+    const response = await fetch(url);
+    const data = await response.json();
+    this.curatedDomains = Object.keys(data);
+    console.log("Loaded curated domains", this.curatedDomains);
+  }
+
+  chooseDomain() {
+    const time = Date.now();
+    return this.curatedDomains[time % this.curatedDomains.length];
+  }
+
+  setUp() {
+    console.log("Starting up crawler extension");
+    this.loadCuratedDomains();
+    setInterval(this.runCrawlIteration.bind(this), 1000);
+  }
+
+  runCrawlIteration() {
+    console.log("Running crawl iteration");
+
+    chrome.storage.local.get(["links"], storageResult => {
+      console.log("Got storage", storageResult);
+
+      let links;
+      if (Object.keys(storageResult).length === 0) {
+        links = ['https://' + this.chooseDomain()];
+      } else {
+        links = storageResult.links;
+      }
+      console.log("Links", links);
+
+      const chosenLink = links[links.length - 1];
+      this.crawlURL(chosenLink);
+    });
+  }
+
+  async crawlURL(url) {
+    const response = await fetch(url);
+    if (response.ok) {
+      const responseText = await response.text();
+      console.log("Got response text", responseText);
+    } else {
+      console.log("Got bad response", response);
+    }
+  }
 }
