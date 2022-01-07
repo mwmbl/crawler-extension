@@ -1,4 +1,4 @@
-import {parser} from "./robots";
+import {canVisit, parser} from "./robots";
 
 chrome.runtime.onInstalled.addListener(() => {
   run();
@@ -94,5 +94,8 @@ class Crawler {
     const parsedRobots = parser(robotsTxt);
     console.log("Parsed robots", parsedRobots);
 
+    const visitAllowed = canVisit(url, 'Mwmbl', parsedRobots);
+    console.log("Visit allowed", visitAllowed);
+    return visitAllowed;
   }
 }

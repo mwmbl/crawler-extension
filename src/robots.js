@@ -145,4 +145,56 @@ export const parser = (rawString) => {
   return robotsObj;
 };
 
-//module.exports = parser;
+
+const applyRecords = (path, records) => {
+  let numApply = 0;
+  let maxSpecificity = 0;
+
+  for (let i = 0; i < records.length; i += 1) {
+    const record = records[i];
+    if (record.path.test(path)) {
+      numApply += 1;
+      if (record.specificity > maxSpecificity) {
+        maxSpecificity = record.specificity;
+      }
+    }
+  }
+
+  return {
+    numApply,
+    maxSpecificity,
+  };
+};
+
+
+const getRecordsForAgent = (userAgent, domainBots) => {
+  const ourBotInBots = userAgent in domainBots;
+  const otherBots = '*' in domainBots;
+  if (ourBotInBots) {
+    return domainBots[userAgent];
+  } else if (otherBots) {
+    return domainBots['*'];
+  }
+  return false;
+}
+
+
+export const canVisit = (url, userAgent, parsedRobots) => {
+  const botGroup = getRecordsForAgent(userAgent, parsedRobots);
+  const allow = applyRecords(url, botGroup.allow);
+  const disallow = applyRecords(url, botGroup.disallow);
+  const noAllows = allow.numApply === 0 && disallow.numApply > 0;
+  const noDisallows = allow.numApply > 0 && disallow.numApply === 0;
+
+  // No rules for allow or disallow apply, therefore full allow.
+  if (noAllows && noDisallows) {
+    return true;
+  }
+
+  if (noDisallows || (allow.maxSpecificity > disallow.maxSpecificity)) {
+    return true;
+  } else if (noAllows || (allow.maxSpecificity < disallow.maxSpecificity)) {
+    return false;
+  }
+  return true;
+}
