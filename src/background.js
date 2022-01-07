@@ -60,17 +60,9 @@ class Crawler {
   }
 
   async crawlURL(url) {
-    const parsedUrl = new URL(url);
-    const robotsUrl = parsedUrl.protocol + '//' + parsedUrl.host + '/robots.txt'
-    const robotsResponse = await fetch(robotsUrl);
-    if (!robotsResponse.ok) {
+    if (! await this.robotsAllowed(url)) {
       return;
     }
-
-    let robotsTxt = await robotsResponse.text();
-    console.log("Robots text", robotsTxt);
-    const parsedRobots = parser(robotsTxt);
-    console.log("Parsed robots", parsedRobots);
 
     const response = await fetch(url);
     if (response.ok) {
@@ -79,5 +71,28 @@ class Crawler {
     } else {
       console.log("Got bad response", response);
     }
+  }
+
+  async robotsAllowed(url) {
+    const parsedUrl = new URL(url);
+    const robotsUrl = parsedUrl.protocol + '//' + parsedUrl.host + '/robots.txt'
+    let robotsResponse;
+    try {
+      robotsResponse = await fetch(robotsUrl);
+    } catch (error) {
+      console.log("Error fetching robots", error);
+      return true;
+    }
+
+    if (!robotsResponse.ok) {
+      console.log("Bad response", robotsResponse);
+      return true;
+    }
+
+    let robotsTxt = await robotsResponse.text();
+    console.log("Robots text", robotsTxt);
+    const parsedRobots = parser(robotsTxt);
+    console.log("Parsed robots", parsedRobots);
+
   }
 }
