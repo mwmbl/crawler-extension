@@ -1,3 +1,5 @@
+import {parser} from "./robots";
+
 chrome.runtime.onInstalled.addListener(() => {
   run();
 });
@@ -35,7 +37,7 @@ class Crawler {
   setUp() {
     console.log("Starting up crawler extension");
     this.loadCuratedDomains();
-    setInterval(this.runCrawlIteration.bind(this), 1000);
+    setInterval(this.runCrawlIteration.bind(this), 10000);
   }
 
   runCrawlIteration() {
@@ -58,6 +60,18 @@ class Crawler {
   }
 
   async crawlURL(url) {
+    const parsedUrl = new URL(url);
+    const robotsUrl = parsedUrl.protocol + '//' + parsedUrl.host + '/robots.txt'
+    const robotsResponse = await fetch(robotsUrl);
+    if (!robotsResponse.ok) {
+      return;
+    }
+
+    let robotsTxt = await robotsResponse.text();
+    console.log("Robots text", robotsTxt);
+    const parsedRobots = parser(robotsTxt);
+    console.log("Parsed robots", parsedRobots);
+
     const response = await fetch(url);
     if (response.ok) {
       const responseText = await response.text();

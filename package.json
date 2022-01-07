@@ -10,7 +10,9 @@
     "vite": "^2.7.2"
   },
   "background": {
-    "scripts": ["background.js"],
+    "scripts": [
+      "background.js"
+    ],
     "persistent": false
   }
 }
