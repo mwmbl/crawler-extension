@@ -3,7 +3,7 @@ import {getParagraphs} from "../src/justext";
 import {JSDOM} from "jsdom";
 
 
-test('JSON', () => {
+test('Test complete HTML file', () => {
   const input = `
 <!doctype html>
 <html lang="en">
@@ -189,9 +189,9 @@ test('JSON', () => {
   `
 
   const parsedDoc = new JSDOM(input).window.document;
-  console.log("Before", parsedDoc.textContent);
+  console.log("Before", parsedDoc.documentElement.textContent);
   const paragraphs = getParagraphs(parsedDoc);
-  console.log("Paragraphs", paragraphs.textContent);
+  console.log("Paragraphs", paragraphs.documentElement.textContent);
 
   // const output = JSON.stringify(input)
   //
@@ -202,3 +202,12 @@ test('JSON', () => {
   // expect(output).toEqual('{"foo":"hello","bar":"world"}')
   // assert.deepEqual(JSON.parse(output), input, 'matches original')
 })
+
+
+test('Test deleting a nested forbidden tag', () => {
+  const document = new JSDOM(`
+    <html lang="en">
+      <body><form>Form content <script>Script content</script></form></body>
+    </html>`).window.document;
+  const processed = getParagraphs(document);
+});

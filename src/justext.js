@@ -41,7 +41,7 @@ function preprocess(document) {
 
   nodes.forEach(node => {
     console.log("Removing", node.textContent);
-    node.parentNode.remove(node);
+    node.remove();
   });
   return document;
 }
