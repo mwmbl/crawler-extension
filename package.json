@@ -4,9 +4,15 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest",
+    "coverage": "vitest --coverage"
   },
   "devDependencies": {
-    "vite": "^2.7.2"
+    "vite": "^2.7.2",
+    "vitest": "^0.0.139",
+    "jsdom": "^19.0.0"
+  },
+  "dependencies": {
   }
 }
