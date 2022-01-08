@@ -1,3 +1,5 @@
+import {canVisit, parser} from "./robots";
+
 chrome.runtime.onInstalled.addListener(() => {
   run();
 });
@@ -35,7 +37,7 @@ class Crawler {
   setUp() {
     console.log("Starting up crawler extension");
     this.loadCuratedDomains();
-    setInterval(this.runCrawlIteration.bind(this), 1000);
+    setInterval(this.runCrawlIteration.bind(this), 10000);
   }
 
   runCrawlIteration() {
@@ -58,6 +60,10 @@ class Crawler {
   }
 
   async crawlURL(url) {
+    if (! await this.robotsAllowed(url)) {
+      return;
+    }
+
     const response = await fetch(url);
     if (response.ok) {
       const responseText = await response.text();
@@ -65,5 +71,31 @@ class Crawler {
     } else {
       console.log("Got bad response", response);
     }
+  }
+
+  async robotsAllowed(url) {
+    const parsedUrl = new URL(url);
+    const robotsUrl = parsedUrl.protocol + '//' + parsedUrl.host + '/robots.txt'
+    let robotsResponse;
+    try {
+      robotsResponse = await fetch(robotsUrl);
+    } catch (error) {
+      console.log("Error fetching robots", error);
+      return true;
+    }
+
+    if (!robotsResponse.ok) {
+      console.log("Bad response", robotsResponse);
+      return true;
+    }
+
+    let robotsTxt = await robotsResponse.text();
+    console.log("Robots text", robotsTxt);
+    const parsedRobots = parser(robotsTxt);
+    console.log("Parsed robots", parsedRobots);
+
+    const visitAllowed = canVisit(url, 'Mwmbl', parsedRobots);
+    console.log("Visit allowed", visitAllowed);
+    return visitAllowed;
   }
 }
