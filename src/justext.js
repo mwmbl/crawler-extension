@@ -189,11 +189,12 @@ export const getParagraphs = (document, textNodeType) => {
   const preprocessed = preprocess(document);
   const paragraphs = makeParagraphs(preprocessed, textNodeType);
   classifyParagraphs(paragraphs);
+  reviseParagraphClassification(paragraphs);
   return paragraphs;
 };
 
 
-export const classifyParagraphs = (paragraphs) => {
+const classifyParagraphs = (paragraphs) => {
   paragraphs.forEach(paragraph => {
     const text = paragraph.getText();
 
@@ -227,3 +228,114 @@ export const classifyParagraphs = (paragraphs) => {
   });
 }
 
+
+const getNeighbour = (i, paragraphs, ignoreNeargood, inc, boundary) => {
+  while (i + inc !== boundary) {
+    i += inc;
+    const c = paragraphs[i].classType;
+    if (c === 'good' || c === 'bad') {
+      return c;
+    }
+    if (c === 'neargood' && !ignoreNeargood) {
+      return c;
+    }
+  }
+  return 'bad';
+}
+
+
+const getPrevNeighbour = (i, paragraphs, ignoreNeargood) => {
+  // Return the class of the paragraph at the top end of the short/neargood
+  // paragraphs block. If ignore_neargood is True, than only 'bad' or 'good'
+  // can be returned, otherwise 'neargood' can be returned, too.
+  return getNeighbour(i, paragraphs, ignoreNeargood, -1, -1);
+}
+
+
+const getNextNeighbour = (i, paragraphs, ignoreNeargood) => {
+  // Return the class of the paragraph at the bottom end of the short/neargood
+  // paragraphs block. If ignore_neargood is True, than only 'bad' or 'good'
+  // can be returned, otherwise 'neargood' can be returned, too.
+  return getNeighbour(i, paragraphs, ignoreNeargood, 1, paragraphs.length);
+}
+
+
+const reviseParagraphClassification = (paragraphs) => {
+  // Good headings
+  for (let i=0; i<paragraphs.length; ++i) {
+    const paragraph = paragraphs[i];
+    paragraph.classType = paragraph.cfClass;
+    if (!(paragraph.heading && paragraph.classType === 'short')) {
+      continue;
+    }
+    let j = i + 1;
+    let distance = 0;
+    while (j < paragraphs.length && distance <= MAX_HEADING_DISTANCE_DEFAULT) {
+      if (paragraphs[j].classType === 'good') {
+        paragraph.classType = 'neargood';
+        break
+      }
+      distance += paragraphs[j].getText().length;
+      j++;
+    }
+  }
+
+  // Classify short
+  const newClasses = {};
+  for (let i=0; i<paragraphs.length; ++i) {
+    const paragraph = paragraphs[i];
+    if (paragraph.classType !== 'short') {
+      continue;
+    }
+    const prevNeighbour = getPrevNeighbour(i, paragraphs, true);
+    const nextNeighbour = getNextNeighbour(i, paragraphs, true);
+    if (prevNeighbour === 'good' && nextNeighbour === 'good') {
+      newClasses[i] = 'good';
+    } else if (prevNeighbour === 'bad' && nextNeighbour === 'bad') {
+      newClasses[i] = 'bad';
+    } else if ((prevNeighbour === 'bad' && getPrevNeighbour(i, paragraphs, false) === 'neargood') ||
+               (nextNeighbour === 'bad' && getNextNeighbour(i, paragraphs, false) === 'neargood')) {
+      newClasses[i] = 'good';
+    } else {
+      newClasses[i] = 'bad';
+    }
+  }
+
+
+  for (const [i, value] of Object.entries(newClasses)) {
+    paragraphs[i].classType = value;
+  }
+
+  // Revise neargood
+  for (let i=0; i<paragraphs.length; ++i) {
+    const paragraph = paragraphs[i];
+    if (paragraph.classType !== 'neargood') {
+      continue;
+    }
+    const prevNeighbour = getPrevNeighbour(i, paragraphs, true);
+    const nextNeighbour = getNextNeighbour(i, paragraphs, true);
+    if (prevNeighbour === 'bad' && nextNeighbour === 'bad') {
+      paragraph.classType = 'bad';
+    } else {
+      paragraph.classType = 'good';
+    }
+  }
+
+  // More good headings
+  for (let i=0; i<paragraphs.length; ++i) {
+    const paragraph = paragraphs[i];
+    if (!(paragraph.heading && paragraph.classType === 'bad' && paragraph.cfClass !== 'bad')) {
+      continue;
+    }
+    let j = i + 1;
+    let distance = 0;
+    while (j < paragraphs.length && distance <= MAX_HEADING_DISTANCE_DEFAULT) {
+      if (paragraphs[j].classType === 'good') {
+        paragraph.classType = 'good';
+        break;
+      }
+      distance += paragraphs[j].getText().length;
+      j += 1;
+    }
+  }
+}
