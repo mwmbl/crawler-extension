@@ -1,6 +1,7 @@
 import { assert, expect, test } from 'vitest'
 import {getParagraphs} from "../src/justext";
 import {JSDOM} from "jsdom";
+import NODE_TYPE from "jsdom/lib/jsdom/living/node-type";
 
 
 test('Test complete HTML file', () => {
@@ -188,10 +189,11 @@ test('Test complete HTML file', () => {
 </html>
   `
 
-  const parsedDoc = new JSDOM(input).window.document;
-  console.log("Before", parsedDoc.documentElement.textContent);
-  const paragraphs = getParagraphs(parsedDoc);
-  console.log("Paragraphs", paragraphs.documentElement.textContent);
+  let jsdom = new JSDOM(input);
+  const parsedDoc = jsdom.window.document;
+  // console.log("Before", parsedDoc.documentElement.textContent);
+  const paragraphs = getParagraphs(parsedDoc, NODE_TYPE.TEXT_NODE);
+  console.log("Paragraphs", paragraphs);
 
   // const output = JSON.stringify(input)
   //

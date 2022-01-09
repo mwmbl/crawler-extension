@@ -21,19 +21,30 @@ const NO_HEADINGS_DEFAULT = false;
 // a good paragraph are classified as good unless --no-headings is specified.
 const MAX_HEADING_DISTANCE_DEFAULT = 200;
 
-const PARAGRAPH_TAGS = [
+const PARAGRAPH_TAGS = new Set([
   'body', 'blockquote', 'caption', 'center', 'col', 'colgroup', 'dd',
   'div', 'dl', 'dt', 'fieldset', 'form', 'legend', 'optgroup', 'option',
   'p', 'pre', 'table', 'td', 'textarea', 'tfoot', 'th', 'thead', 'tr',
   'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-];
+]);
 const DEFAULT_ENCODING = 'utf8';
 const DEFAULT_ENC_ERRORS = 'replace';
 // const CHARSET_META_TAG_PATTERN = re.compile(br"""<meta[^>]+charset=["']?([^'"/>\s]+)""", re.IGNORECASE);
 const GOOD_OR_BAD = ['good', 'bad'];
 
 
-function preprocess(document) {
+class Paragraph {
+  constructor(domPath) {
+    this.domPath = [...domPath];
+    this.textNodes = [];
+    this.charsCountInLinks = 0;
+    this.tagsCount = 0;
+    this.classType = "";
+  }
+}
+
+
+const preprocess = document => {
   const killTags = "script, form, style, embed";
 
   const nodes = document.querySelectorAll(killTags);
@@ -44,9 +55,112 @@ function preprocess(document) {
     node.remove();
   });
   return document;
+};
+
+
+class ParagraphMaker {
+  constructor() {
+    this.path = [];
+    this.paragraphs = [];
+    this.paragraph = null;
+    this.link = false;
+    this.br = false;
+    this.startNewParagraph();
+  }
+
+  startNewParagraph() {
+    if (this.paragraph !== null && this.paragraph.textNodes.length > 0) {
+      this.paragraphs.push(this.paragraph);
+    }
+    console.log("New paragraph", this.path);
+    this.paragraph = new Paragraph(this.path);
+  }
+
+  startElementNS(name) {
+    console.log("Starting", name);
+    const nameLower = name ? name.toLowerCase() : '';
+    if (nameLower) {
+      this.path.push(nameLower);
+    }
+    if (PARAGRAPH_TAGS.has(nameLower.toLowerCase()) || (nameLower === 'br' && this.br)) {
+      if (nameLower === 'br') {
+        this.paragraph.tagsCount++;
+      }
+      this.startNewParagraph();
+    } else {
+      this.br = nameLower === 'br';
+      if (this.br) {
+        this.paragraph.textNodes.push(' ');
+      } else if (nameLower === 'a') {
+        this.link = true;
+      }
+      this.paragraph.tagsCount++;
+    }
+  }
+
+  endElementNS(name) {
+    if (name) {
+      this.path.pop();
+    }
+
+    const nameLower = name ? name.toLowerCase() : '';
+    if (PARAGRAPH_TAGS.has(nameLower)) {
+      this.startNewParagraph();
+    }
+
+    if (nameLower === 'a') {
+      this.link = false;
+    }
+  }
+
+  endDocument() {
+    this.startNewParagraph();
+  }
+
+  characters(content) {
+    const trimmedText = content.trim();
+    if (trimmedText.length === 0) {
+      // Whitespace only
+      return;
+    }
+
+    console.log("Found text", trimmedText);
+    // TODO: remove multiple whitespaces inside the trimmedText
+    this.paragraph.textNodes.push(trimmedText);
+
+    if (this.link) {
+      this.paragraph.charsCountInLinks += trimmedText.length;
+    }
+
+    this.br = false;
+  }
 }
 
-export const getParagraphs = (document) => {
+const visitNodes = (node, paragraphMaker, textNodeType) => {
+  paragraphMaker.startElementNS(node.tagName);
+
+  const children = [...node.childNodes];
+  children.forEach(child => {
+    if (child.nodeType === textNodeType) {
+      paragraphMaker.characters(child.textContent);
+    } else {
+      visitNodes(child, paragraphMaker, textNodeType);
+    }
+  });
+
+  paragraphMaker.endElementNS(node.tagName);
+};
+
+
+const makeParagraphs = (preprocessed, textNodeType) => {
+  const paragraphMaker = new ParagraphMaker();
+  visitNodes(preprocessed, paragraphMaker, textNodeType);
+  paragraphMaker.endDocument();
+  return paragraphMaker.paragraphs;
+};
+
+
+export const getParagraphs = (document, textNodeType) => {
   const preprocessed = preprocess(document);
-  return preprocessed;
-}
+  return makeParagraphs(preprocessed, textNodeType);
+};
