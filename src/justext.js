@@ -95,7 +95,7 @@ class ParagraphMaker {
       this.paragraph.links = [...this.links];
       this.paragraphs.push(this.paragraph);
       this.links = new Set();
-      console.log("New paragraph", this.paragraph, this.paragraphs, this.path);
+      console.log("New paragraph", this.paragraph, this.path);
       this.paragraph = new Paragraph(this.path);
     } else if (this.paragraph === null) {
       this.paragraph = new Paragraph(this.path);
@@ -171,6 +171,13 @@ const visitNodes = (node, paragraphMaker, textNodeType) => {
   console.log("Visit node", node.nodeType, node.tagName);
   paragraphMaker.startElementNS(node.tagName);
 
+  const nameLower = node.tagName ? node.tagName.toLowerCase() : '';
+  if (nameLower === 'a') {
+    console.log("Found link", node.href);
+    const url = node.href;
+    paragraphMaker.addLink(url);
+  }
+
   const children = [...node.childNodes];
   children.forEach(child => {
     if (child.nodeType === textNodeType) {
@@ -180,13 +187,6 @@ const visitNodes = (node, paragraphMaker, textNodeType) => {
     }
 
   });
-
-  const nameLower = node.tagName ? node.tagName.toLowerCase() : '';
-  if (nameLower === 'a') {
-    console.log("Found link", node.href);
-    const url = node.href;
-    paragraphMaker.addLink(url);
-  }
 
   paragraphMaker.endElementNS(node.tagName);
   console.log("End node", node.tagName);
