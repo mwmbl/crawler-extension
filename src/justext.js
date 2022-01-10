@@ -175,6 +175,7 @@ const visitNodes = (node, paragraphMaker, textNodeType) => {
   if (nameLower === 'a') {
     console.log("Found link", node.href);
     const url = node.href;
+    // TODO: make links absolute
     paragraphMaker.addLink(url);
   }
 
