@@ -194,6 +194,7 @@ test('Test complete HTML file', () => {
   // console.log("Before", parsedDoc.documentElement.textContent);
   const paragraphs = getParagraphs(parsedDoc, NODE_TYPE.TEXT_NODE);
   console.log("Paragraphs", paragraphs);
+  console.log("-----------------------");
 
   // const output = JSON.stringify(input)
   //
@@ -211,5 +212,22 @@ test('Test deleting a nested forbidden tag', () => {
     <html lang="en">
       <body><form>Form content <script>Script content</script></form></body>
     </html>`).window.document;
-  const processed = getParagraphs(document);
+  const processed = getParagraphs(document, NODE_TYPE.TEXT_NODE);
+  expect(processed).toEqual([]);
+  console.log("-----------------------", processed);
 });
+
+
+test('Test that we capture links', () => {
+  const document = new JSDOM((`
+    <html lang="en">
+      <body><p><a href="/test"><h3>Some content</h3></a></p></body>
+    </html>
+  `)).window.document;
+  const processed = getParagraphs(document, NODE_TYPE.TEXT_NODE);
+  expect(processed.length).toEqual(1);
+  expect(processed[0].links).toEqual(['/test']);
+  console.log("-----------------------", processed);
+});
+
+

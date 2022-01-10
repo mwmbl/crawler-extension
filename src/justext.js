@@ -55,6 +55,7 @@ class Paragraph {
     this.tagsCount = 0;
     this.cfClass = null;
     this.classType = "";
+    this.links = [];
     this.heading = this.domPath.some(x => HEADINGS.has(x));
   }
 
@@ -85,23 +86,29 @@ class ParagraphMaker {
     this.paragraph = null;
     this.link = false;
     this.br = false;
+    this.links = new Set();
     this.startNewParagraph();
   }
 
   startNewParagraph() {
     if (this.paragraph !== null && this.paragraph.textNodes.length > 0) {
+      this.paragraph.links = [...this.links];
       this.paragraphs.push(this.paragraph);
+      this.links = new Set();
+      console.log("New paragraph", this.paragraph, this.paragraphs, this.path);
+      this.paragraph = new Paragraph(this.path);
+    } else if (this.paragraph === null) {
+      this.paragraph = new Paragraph(this.path);
     }
-    console.log("New paragraph", this.path);
-    this.paragraph = new Paragraph(this.path);
   }
 
   startElementNS(name) {
     console.log("Starting", name);
     const nameLower = name ? name.toLowerCase() : '';
-    if (nameLower) {
+    if (nameLower !== '') {
       this.path.push(nameLower);
     }
+    console.log("New path", this.path);
     if (PARAGRAPH_TAGS.has(nameLower.toLowerCase()) || (nameLower === 'br' && this.br)) {
       if (nameLower === 'br') {
         this.paragraph.tagsCount++;
@@ -154,9 +161,14 @@ class ParagraphMaker {
 
     this.br = false;
   }
+
+  addLink(url) {
+    this.links.add(url);
+  }
 }
 
 const visitNodes = (node, paragraphMaker, textNodeType) => {
+  console.log("Visit node", node.nodeType, node.tagName);
   paragraphMaker.startElementNS(node.tagName);
 
   const children = [...node.childNodes];
@@ -166,9 +178,18 @@ const visitNodes = (node, paragraphMaker, textNodeType) => {
     } else {
       visitNodes(child, paragraphMaker, textNodeType);
     }
+
   });
 
+  const nameLower = node.tagName ? node.tagName.toLowerCase() : '';
+  if (nameLower === 'a') {
+    console.log("Found link", node.href);
+    const url = node.href;
+    paragraphMaker.addLink(url);
+  }
+
   paragraphMaker.endElementNS(node.tagName);
+  console.log("End node", node.tagName);
 };
 
 
@@ -183,6 +204,7 @@ const makeParagraphs = (preprocessed, textNodeType) => {
 export const getParagraphs = (document, textNodeType) => {
   const preprocessed = preprocess(document);
   const paragraphs = makeParagraphs(preprocessed, textNodeType);
+  console.log("After makeParagraphs", paragraphs);
   classifyParagraphs(paragraphs);
   reviseParagraphClassification(paragraphs);
   return paragraphs;
