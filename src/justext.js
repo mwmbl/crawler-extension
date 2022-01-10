@@ -29,11 +29,6 @@ const PARAGRAPH_TAGS = new Set([
 ]);
 
 const HEADINGS = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
-const DEFAULT_ENCODING = 'utf8';
-const DEFAULT_ENC_ERRORS = 'replace';
-// const CHARSET_META_TAG_PATTERN = re.compile(br"""<meta[^>]+charset=["']?([^'"/>\s]+)""", re.IGNORECASE);
-const GOOD_OR_BAD = ['good', 'bad'];
-
 
 const STOPWORDS = new Set([
   "a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "aren't", "as", "at",
