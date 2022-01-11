@@ -152,7 +152,6 @@ class ParagraphMaker {
     }
 
     console.log("Found text", trimmedText);
-    // TODO: remove multiple whitespaces inside the trimmedText
     this.paragraph.textNodes.push(trimmedText);
 
     if (this.link) {
