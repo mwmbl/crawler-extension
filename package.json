@@ -2,7 +2,7 @@
   "name": "mwmbl-crawler-extension",
   "version": "0.0.0",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite build --watch",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
