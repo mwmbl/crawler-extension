@@ -33,7 +33,7 @@ class Crawler {
     const url = chrome.runtime.getURL('../../assets/data/hn-top-domains.json');
     const response = await fetch(url);
     const data = await response.json();
-    this.curatedDomains = Object.keys(data);
+    this.curatedDomains = new Set(Object.keys(data));
     console.log("Loaded curated domains", this.curatedDomains);
 
     const storageLinks = await this.getLinks();
@@ -41,7 +41,7 @@ class Crawler {
     if (!storageLinks) {
       const links = {};
       for (let i=0; i<20; ++i) {
-        const link = 'https://' + chooseRandom(this.curatedDomains);
+        const link = 'https://' + chooseRandom([...this.curatedDomains]);
         links[link] = 'curated';
       }
       await this.setLinks(links);
@@ -92,11 +92,14 @@ class Crawler {
     const goodParagraphs = paragraphs.filter(p => p.classType === 'good');
     console.log("Got good paragraphs", goodParagraphs);
 
-    const links = new Set();
-    goodParagraphs.forEach(p => {
-      links.add(...p.links);
-    });
-    console.log("Got links", links);
+    const urlDomain = new URL(url).host;
+    if (this.curatedDomains.has(urlDomain)) {
+      const links = new Set();
+      goodParagraphs.forEach(p => {
+        links.add(...p.links);
+      });
+      console.log("Found new links", links);
+    }
   }
 
   async robotsAllowed(url) {
