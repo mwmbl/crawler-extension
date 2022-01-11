@@ -258,3 +258,16 @@ test('Test adjacent links', () => {
   console.log("-----------------------", processed);
 });
 
+
+test('Remove multiple white spaces', () => {
+  const document = new JSDOM((`
+    <html lang="en">
+      <body><p>This is      some long
+      and interesting content         with lots of
+      white space</p></body>
+    </html>
+  `)).window.document;
+  const processed = getParagraphs(document, NODE_TYPE.TEXT_NODE);
+  expect(processed.length).toEqual(1);
+  expect(processed[0].getText()).toEqual('This is some long and interesting content with lots of white space');
+})

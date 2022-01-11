@@ -145,7 +145,7 @@ class ParagraphMaker {
   }
 
   characters(content) {
-    const trimmedText = content.trim();
+    const trimmedText = content.trim().replace(/\s+/g, ' ');
     if (trimmedText.length === 0) {
       // Whitespace only
       return;
