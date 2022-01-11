@@ -17,6 +17,12 @@ function run() {
 }
 
 
+function chooseRandom(array) {
+  const d = Math.floor(Math.random()*array.length);
+  return array[d];
+}
+
+
 class Crawler {
   constructor() {
     this.curatedDomains = [];
@@ -29,36 +35,44 @@ class Crawler {
     const data = await response.json();
     this.curatedDomains = Object.keys(data);
     console.log("Loaded curated domains", this.curatedDomains);
+
+    const storageLinks = await this.getLinks();
+    console.log("Storage links", storageLinks);
+    if (!storageLinks) {
+      const links = {};
+      for (let i=0; i<20; ++i) {
+        const link = 'https://' + chooseRandom(this.curatedDomains);
+        links[link] = 'curated';
+      }
+      await this.setLinks(links);
+    }
   }
 
-  chooseDomain() {
-    const time = Date.now();
-    return this.curatedDomains[time % this.curatedDomains.length];
+  async getLinks() {
+    const promise = new Promise(resolve => {
+      chrome.storage.local.get(["links"], resolve);
+    });
+    const result = await promise;
+    return result["links"];
   }
 
-  setUp() {
+  async setLinks(links) {
+    await chrome.storage.local.set({links: links});
+  }
+
+  async setUp() {
     console.log("Starting up crawler extension");
-    this.loadCuratedDomains();
-    setInterval(this.runCrawlIteration.bind(this), 10000);
+    await this.loadCuratedDomains();
+    setInterval(this.runCrawlIteration.bind(this), 5000);
   }
 
-  runCrawlIteration() {
+  async runCrawlIteration() {
     console.log("Running crawl iteration");
 
-    chrome.storage.local.get(["links"], storageResult => {
-      console.log("Got storage", storageResult);
-
-      let links;
-      if (Object.keys(storageResult).length === 0) {
-        links = ['https://' + this.chooseDomain()];
-      } else {
-        links = storageResult.links;
-      }
-      console.log("Links", links);
-
-      const chosenLink = links[links.length - 1];
-      this.crawlURL(chosenLink);
-    });
+    const links = await this.getLinks();
+    console.log("Got links", links);
+    const chosenLink = chooseRandom(Object.keys(links))
+    await this.crawlURL(chosenLink);
   }
 
   async crawlURL(url) {
