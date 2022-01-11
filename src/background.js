@@ -1,4 +1,5 @@
 import {canVisit, parser} from "./robots";
+import {getParagraphs} from "./justext";
 
 chrome.runtime.onInstalled.addListener(() => {
   run();
@@ -19,6 +20,7 @@ function run() {
 class Crawler {
   constructor() {
     this.curatedDomains = [];
+    this.domParser = new DOMParser();
   }
 
   async loadCuratedDomains() {
@@ -65,12 +67,14 @@ class Crawler {
     }
 
     const response = await fetch(url);
-    if (response.ok) {
-      const responseText = await response.text();
-      console.log("Got response text", responseText);
-    } else {
-      console.log("Got bad response", response);
+    const responseText = response.ok ? await response.text() : null;
+    if (!responseText) {
+      return;
     }
+
+    const dom = this.domParser.parseFromString(responseText, 'text/html');
+    const paragraphs = getParagraphs(dom, Node.TEXT_NODE);
+    console.log("Got paragraphs", paragraphs);
   }
 
   async robotsAllowed(url) {
