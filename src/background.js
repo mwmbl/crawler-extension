@@ -67,12 +67,8 @@ class Crawler {
     }
 
     const response = await fetch(url);
-    let responseText;
-    if (response.ok) {
-      responseText = await response.text();
-      console.log("Got response text", responseText);
-    } else {
-      console.log("Got bad response", response);
+    const responseText = response.ok ? await response.text() : null;
+    if (!responseText) {
       return;
     }
 
