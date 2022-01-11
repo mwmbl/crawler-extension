@@ -1,6 +1,10 @@
 import {canVisit, parser} from "./robots";
 import {getParagraphs} from "./justext";
 
+
+const MAX_STORAGE_LINKS = 100;
+
+
 chrome.runtime.onInstalled.addListener(() => {
   run();
 });
@@ -72,11 +76,11 @@ class Crawler {
     const links = await this.getLinks();
     console.log("Got links", links);
     const chosenLink = chooseRandom(Object.keys(links))
+    console.log("Crawling url", chosenLink, links[chosenLink]);
     await this.crawlURL(chosenLink);
   }
 
   async crawlURL(url) {
-    console.log("Crawling url", url);
     if (! await this.robotsAllowed(url)) {
       return;
     }
@@ -92,14 +96,32 @@ class Crawler {
     const goodParagraphs = paragraphs.filter(p => p.classType === 'good');
     console.log("Got good paragraphs", goodParagraphs);
 
+    const storageLinks = await this.getLinks();
+
     const urlDomain = new URL(url).host;
     if (this.curatedDomains.has(urlDomain)) {
-      const links = new Set();
+      const newLinks = new Set();
       goodParagraphs.forEach(p => {
-        links.add(...p.links);
+        newLinks.add(...p.links);
       });
-      console.log("Found new links", links);
+      console.log("Found new links", newLinks);
+
+      // TODO Check for relative links which are stored as "chrome-extension://"
+
+      newLinks.forEach(link => {
+        storageLinks[link] = url;
+      });
+
+      // Make sure we don't store too much
+      while (storageLinks.length > MAX_STORAGE_LINKS) {
+        const link = chooseRandom(storageLinks.keys());
+        delete storageLinks[link];
+      }
     }
+
+    // Remove the URL we've just crawled
+    delete storageLinks[url];
+    await this.setLinks(storageLinks);
   }
 
   async robotsAllowed(url) {
