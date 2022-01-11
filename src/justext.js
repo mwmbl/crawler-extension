@@ -69,10 +69,8 @@ const preprocess = document => {
   const killTags = "script, form, style, embed";
 
   const nodes = document.querySelectorAll(killTags);
-  console.log("Got num nodes", nodes.length);
 
   nodes.forEach(node => {
-    console.log("Removing", node.textContent);
     node.remove();
   });
   return document;
@@ -95,7 +93,6 @@ class ParagraphMaker {
       this.paragraph.links = [...this.links];
       this.paragraphs.push(this.paragraph);
       this.links = new Set();
-      console.log("New paragraph", this.paragraph, this.path);
       this.paragraph = new Paragraph(this.path);
     } else if (this.paragraph === null) {
       this.paragraph = new Paragraph(this.path);
@@ -103,12 +100,10 @@ class ParagraphMaker {
   }
 
   startElementNS(name) {
-    console.log("Starting", name);
     const nameLower = name ? name.toLowerCase() : '';
     if (nameLower !== '') {
       this.path.push(nameLower);
     }
-    console.log("New path", this.path);
     if (PARAGRAPH_TAGS.has(nameLower.toLowerCase()) || (nameLower === 'br' && this.br)) {
       if (nameLower === 'br') {
         this.paragraph.tagsCount++;
@@ -151,7 +146,6 @@ class ParagraphMaker {
       return;
     }
 
-    console.log("Found text", trimmedText);
     this.paragraph.textNodes.push(trimmedText);
 
     if (this.link) {
@@ -167,12 +161,10 @@ class ParagraphMaker {
 }
 
 const visitNodes = (node, paragraphMaker, textNodeType) => {
-  console.log("Visit node", node.nodeType, node.tagName);
   paragraphMaker.startElementNS(node.tagName);
 
   const nameLower = node.tagName ? node.tagName.toLowerCase() : '';
   if (nameLower === 'a') {
-    console.log("Found link", node.href);
     const url = node.href;
     // TODO: make links absolute
     paragraphMaker.addLink(url);
@@ -189,7 +181,6 @@ const visitNodes = (node, paragraphMaker, textNodeType) => {
   });
 
   paragraphMaker.endElementNS(node.tagName);
-  console.log("End node", node.tagName);
 };
 
 
@@ -204,7 +195,6 @@ const makeParagraphs = (preprocessed, textNodeType) => {
 export const getParagraphs = (document, textNodeType) => {
   const preprocessed = preprocess(document);
   const paragraphs = makeParagraphs(preprocessed, textNodeType);
-  console.log("After makeParagraphs", paragraphs);
   classifyParagraphs(paragraphs);
   reviseParagraphClassification(paragraphs);
   return paragraphs;
