@@ -76,6 +76,7 @@ class Crawler {
   }
 
   async crawlURL(url) {
+    console.log("Crawling url", url);
     if (! await this.robotsAllowed(url)) {
       return;
     }
@@ -88,7 +89,14 @@ class Crawler {
 
     const dom = this.domParser.parseFromString(responseText, 'text/html');
     const paragraphs = getParagraphs(dom, Node.TEXT_NODE);
-    console.log("Got paragraphs", paragraphs);
+    const goodParagraphs = paragraphs.filter(p => p.classType === 'good');
+    console.log("Got good paragraphs", goodParagraphs);
+
+    const links = new Set();
+    goodParagraphs.forEach(p => {
+      links.add(...p.links);
+    });
+    console.log("Got links", links);
   }
 
   async robotsAllowed(url) {
@@ -108,7 +116,6 @@ class Crawler {
     }
 
     let robotsTxt = await robotsResponse.text();
-    console.log("Robots text", robotsTxt);
     const parsedRobots = parser(robotsTxt);
     console.log("Parsed robots", parsedRobots);
 
