@@ -17,6 +17,7 @@ chrome.runtime.onStartup.addListener(() => {
 });
 
 
+// TODO: this isn't being fired when the extension is enabled
 chrome.management.onEnabled.addListener(() => {
   console.log("Enabled");
   run();
@@ -48,7 +49,7 @@ class Crawler {
     this.curatedDomains = new Set(Object.keys(data));
     console.log("Loaded curated domains", this.curatedDomains);
 
-    const storageLinks = await this.getLinks();
+    const storageLinks = await this.retrieve('links');
     console.log("Storage links", storageLinks);
     if (!storageLinks) {
       const links = {};
@@ -56,20 +57,20 @@ class Crawler {
         const link = 'https://' + chooseRandom([...this.curatedDomains]);
         links[link] = 'curated';
       }
-      await this.setLinks(links);
+      await this.store('links', links);
     }
   }
 
-  async getLinks() {
+  async retrieve(key) {
     const promise = new Promise(resolve => {
-      chrome.storage.local.get(["links"], resolve);
+      chrome.storage.local.get([key], resolve);
     });
     const result = await promise;
-    return result["links"];
+    return result[key];
   }
 
-  async setLinks(links) {
-    await chrome.storage.local.set({links: links});
+  async store(key, value) {
+    await chrome.storage.local.set({[key]: value});
   }
 
   async setUp() {
@@ -81,7 +82,7 @@ class Crawler {
   async runCrawlIteration() {
     console.log("Running crawl iteration");
 
-    const links = await this.getLinks();
+    const links = await this.retrieve('links');
     console.log("Got links", links);
     const chosenLink = chooseRandom(Object.keys(links))
     console.log("Crawling url", chosenLink, links[chosenLink]);
@@ -104,7 +105,7 @@ class Crawler {
     const goodParagraphs = paragraphs.filter(p => p.classType === 'good');
     console.log("Got good paragraphs", goodParagraphs);
 
-    const storageLinks = await this.getLinks();
+    const storageLinks = await this.retrieve('links');
 
     const urlDomain = new URL(url).host;
     if (this.curatedDomains.has(urlDomain)) {
@@ -134,7 +135,11 @@ class Crawler {
 
     // Remove the URL we've just crawled
     delete storageLinks[url];
-    await this.setLinks(storageLinks);
+    await this.store('links', storageLinks);
+  }
+
+  async recordNewResult(result) {
+
   }
 
   async robotsAllowed(url) {
