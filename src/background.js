@@ -6,11 +6,19 @@ const MAX_STORAGE_LINKS = 100;
 
 
 chrome.runtime.onInstalled.addListener(() => {
+  console.log("Installed");
   run();
 });
 
 
 chrome.runtime.onStartup.addListener(() => {
+  console.log("Startup");
+  run();
+});
+
+
+chrome.management.onEnabled.addListener(() => {
+  console.log("Enabled");
   run();
 });
 
@@ -102,14 +110,19 @@ class Crawler {
     if (this.curatedDomains.has(urlDomain)) {
       const newLinks = new Set();
       goodParagraphs.forEach(p => {
-        newLinks.add(...p.links);
+        console.log("Paragraph links", p.links);
+        if (p.links.length > 0) {
+          newLinks.add(...p.links);
+        }
       });
       console.log("Found new links", newLinks);
 
-      // TODO Check for relative links which are stored as "chrome-extension://"
-
       newLinks.forEach(link => {
-        storageLinks[link] = url;
+        // TODO Check for relative links which are stored as "chrome-extension://"
+        console.log("Adding link", link);
+        if (link.startsWith('http')) {
+          storageLinks[link] = url;
+        }
       });
 
       // Make sure we don't store too much

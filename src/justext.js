@@ -166,7 +166,6 @@ const visitNodes = (node, paragraphMaker, textNodeType) => {
   const nameLower = node.tagName ? node.tagName.toLowerCase() : '';
   if (nameLower === 'a') {
     const url = node.href;
-    // TODO: make links absolute
     paragraphMaker.addLink(url);
   }
 
