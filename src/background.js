@@ -3,6 +3,11 @@ import {getParagraphs} from "./justext";
 
 
 const MAX_STORAGE_LINKS = 100;
+const BATCH_SIZE = 20;
+
+const MAX_URL_LENGTH = 150
+const NUM_TITLE_CHARS = 65
+const NUM_EXTRACT_CHARS = 155
 
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -86,10 +91,10 @@ class Crawler {
     console.log("Got links", links);
     const chosenLink = chooseRandom(Object.keys(links))
     console.log("Crawling url", chosenLink, links[chosenLink]);
-    await this.crawlURL(chosenLink);
+    await this.crawlURL(chosenLink, links[chosenLink]);
   }
 
-  async crawlURL(url) {
+  async crawlURL(url, source) {
     if (! await this.robotsAllowed(url)) {
       return;
     }
@@ -119,9 +124,13 @@ class Crawler {
       console.log("Found new links", newLinks);
 
       newLinks.forEach(link => {
-        // TODO Check for relative links which are stored as "chrome-extension://"
-        console.log("Adding link", link);
-        if (link.startsWith('http')) {
+        // TODO: - Check for relative links which are stored as "chrome-extension://"
+        //       - Remove # fragments of links
+        //       - Add in root page for URLs?
+        //       - Somehow balance links so that we don't bias towards pages with more links
+        //       - Perhaps take the first n links on the page
+        if (link.startsWith('http') && link.length <= MAX_URL_LENGTH) {
+          console.log("Adding link", link);
           storageLinks[link] = url;
         }
       });
@@ -136,10 +145,52 @@ class Crawler {
     // Remove the URL we've just crawled
     delete storageLinks[url];
     await this.store('links', storageLinks);
+
+    if (dom.title && goodParagraphs.length > 0) {
+      let extract = '';
+      for (let i = 0; i < goodParagraphs.length; ++i) {
+        extract += ' ' + goodParagraphs[i].getText();
+        if (extract.length > NUM_EXTRACT_CHARS) {
+          break;
+        }
+      }
+
+      extract = extract.trim()
+      if (extract.length > NUM_EXTRACT_CHARS) {
+        extract = extract.substring(0, NUM_EXTRACT_CHARS - 1) + '…';
+      }
+
+      let title = dom.title.trim();
+      if (title.length > NUM_TITLE_CHARS) {
+        title = title.substr(0, NUM_TITLE_CHARS - 1) + '…';
+      }
+
+      const result = {
+        'url': url,
+        'source': source,
+        'title': title,
+        'extract': extract,
+      }
+      await this.recordNewResult(result);
+    }
   }
 
   async recordNewResult(result) {
+    console.log("Recording new result", result);
+    let currentResults = this.retrieve('results');
+    if (!currentResults) {
+      currentResults = [];
+    }
 
+    currentResults.push(result);
+    if (currentResults.length >= BATCH_SIZE) {
+      let batches = await this.retrieve('batches');
+      batches.push(currentResults);
+      await this.store('batches', batches);
+      currentResults = [];
+    }
+
+    await this.store('results', currentResults);
   }
 
   async robotsAllowed(url) {
