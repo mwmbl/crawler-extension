@@ -2,7 +2,9 @@ import {canVisit, parser} from "./robots";
 import {getParagraphs} from "./justext";
 
 
-const MAX_STORAGE_LINKS = 100;
+const POST_BATCH_URL = 'https://crawler-server-oq4r5q2hsq-ue.a.run.app/batches/';
+const MAX_NEW_LINKS = 10;
+const MAX_STORAGE_LINKS = 5000;
 const BATCH_SIZE = 20;
 
 const MAX_URL_LENGTH = 150
@@ -81,7 +83,7 @@ class Crawler {
   async setUp() {
     console.log("Starting up crawler extension");
     await this.loadCuratedDomains();
-    setInterval(this.runCrawlIteration.bind(this), 5000);
+    setInterval(this.runCrawlIteration.bind(this), 1000);
   }
 
   async runCrawlIteration() {
@@ -113,26 +115,12 @@ class Crawler {
     const storageLinks = await this.retrieve('links');
 
     const urlDomain = new URL(url).host;
-    if (this.curatedDomains.has(urlDomain)) {
-      const newLinks = new Set();
-      goodParagraphs.forEach(p => {
-        console.log("Paragraph links", p.links);
-        if (p.links.length > 0) {
-          newLinks.add(...p.links);
-        }
-      });
-      console.log("Found new links", newLinks);
+    const newLinks = this.getNewLinks(goodParagraphs);
+    console.log("Found new links", newLinks);
 
+    if (this.curatedDomains.has(urlDomain)) {
       newLinks.forEach(link => {
-        // TODO: - Check for relative links which are stored as "chrome-extension://"
-        //       - Remove # fragments of links
-        //       - Add in root page for URLs?
-        //       - Somehow balance links so that we don't bias towards pages with more links
-        //       - Perhaps take the first n links on the page
-        if (link.startsWith('http') && link.length <= MAX_URL_LENGTH) {
-          console.log("Adding link", link);
-          storageLinks[link] = url;
-        }
+        storageLinks[link] = url;
       });
 
       // Make sure we don't store too much
@@ -166,18 +154,43 @@ class Crawler {
       }
 
       const result = {
-        'url': url,
+        'timestamp': Date.now(),
         'source': source,
+        'url': url,
         'title': title,
         'extract': extract,
+        'links': [...newLinks]
       }
       await this.recordNewResult(result);
     }
   }
 
+  getNewLinks(goodParagraphs) {
+    // TODO: - Check for relative links which are stored as "chrome-extension://"
+    //       - Remove # fragments of links
+    //       - Add in root page for URLs?
+    const newLinks = new Set();
+    for (let i=0; i<goodParagraphs.length; ++i) {
+      const p = goodParagraphs[i];
+      if (p.links.length > 0) {
+        for (let j=0; j<p.links.length; ++j) {
+          const link = p.links[j];
+          if (link.startsWith('http') && link.length <= MAX_URL_LENGTH) {
+            newLinks.add(link);
+            if (newLinks.size >= MAX_NEW_LINKS) {
+              return newLinks;
+            }
+          }
+        }
+      }
+    }
+    return newLinks;
+  }
+
   async recordNewResult(result) {
     console.log("Recording new result", result);
-    let currentResults = this.retrieve('results');
+    let currentResults = await this.retrieve('results');
+    console.log("Got current results", currentResults);
     if (!currentResults) {
       currentResults = [];
     }
@@ -185,12 +198,50 @@ class Crawler {
     currentResults.push(result);
     if (currentResults.length >= BATCH_SIZE) {
       let batches = await this.retrieve('batches');
+      console.log("Got batches", batches);
+      if (!batches) {
+        batches = [];
+      }
       batches.push(currentResults);
       await this.store('batches', batches);
       currentResults = [];
     }
 
     await this.store('results', currentResults);
+    await this.sendBatch();
+  }
+
+  async getUserId() {
+    let userId = await this.retrieve('user_id');
+    if (!userId) {
+      userId = crypto.randomUUID();
+      await this.store('user_id', userId);
+    }
+    return userId;
+  }
+
+  async sendBatch() {
+    let batches = await this.retrieve('batches');
+    if (batches && batches.length > 0) {
+      const batchItems = batches.pop();
+      let userId = await this.getUserId();
+      const batch = {
+        'user_id': userId,
+        'items': batchItems
+      }
+      const response = await fetch(POST_BATCH_URL, {
+        method: 'POST',
+        // mode: 'cors',
+        cache: 'no-cache',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(batch)
+      });
+      const result = await response.json();
+      console.log("Batch post result", result);
+      if (result['status'] === 'ok') {
+        await this.store('batches', batches);
+      }
+    }
   }
 
   async robotsAllowed(url) {
