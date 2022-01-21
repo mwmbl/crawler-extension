@@ -115,23 +115,22 @@ class Crawler {
     const dom = this.domParser.parseFromString(responseText, 'text/html');
     const paragraphs = getParagraphs(dom, Node.TEXT_NODE);
     const goodParagraphs = paragraphs.filter(p => p.classType === 'good');
-    console.log("Got good paragraphs", goodParagraphs);
 
     const storageLinks = await this.retrieve('links');
     const urlDomain = getDomain(url);
     const newLinks = this.getNewLinks(goodParagraphs, urlDomain);
-    console.log("Found new links", newLinks);
+    if (newLinks.size > 0) {
+      console.log("Found new links from", url, newLinks);
+    }
 
-    if (this.curatedDomains.has(urlDomain)) {
-      newLinks.forEach(link => {
-        storageLinks[link] = url;
-      });
+    newLinks.forEach(link => {
+      storageLinks[link] = url;
+    });
 
-      // Make sure we don't store too much
-      while (storageLinks.length > MAX_STORAGE_LINKS) {
-        const link = chooseRandom(storageLinks.keys());
-        delete storageLinks[link];
-      }
+    // Make sure we don't store too much
+    while (storageLinks.length > MAX_STORAGE_LINKS) {
+      const link = chooseRandom(storageLinks.keys());
+      delete storageLinks[link];
     }
 
     // Remove the URL we've just crawled
@@ -170,9 +169,7 @@ class Crawler {
   }
 
   getNewLinks(goodParagraphs, domain) {
-    // TODO: - Check for relative links which are stored as "chrome-extension://"
-    //       - Remove # fragments of links
-    //       - Add in root page for URLs?
+    const sourceIsCurated = this.curatedDomains.has(domain);
     const newLinks = new Set();
     for (let i=0; i<goodParagraphs.length; ++i) {
       const p = goodParagraphs[i];
@@ -182,7 +179,8 @@ class Crawler {
           if (link.startsWith('http') && link.length <= MAX_URL_LENGTH) {
             const linkUrl = new URL(link);
             // Only consider links to external domains
-            if (linkUrl.host !== domain) {
+            // We can take any link from curated domains, and any link to curated domains
+            if (linkUrl.host !== domain && (sourceIsCurated || this.curatedDomains.has(linkUrl.host))) {
               // Remove the hash fragment
               linkUrl.hash = '';
               newLinks.add(linkUrl.href);
