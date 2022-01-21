@@ -3,7 +3,7 @@ import {getParagraphs} from "./justext";
 
 
 const POST_BATCH_URL = 'https://crawler-server-oq4r5q2hsq-ue.a.run.app/batches/';
-const MAX_NEW_LINKS = 10;
+const MAX_NEW_LINKS = 20;
 const MAX_STORAGE_LINKS = 5000;
 const BATCH_SIZE = 20;
 
@@ -42,6 +42,11 @@ function chooseRandom(array) {
   return array[d];
 }
 
+
+function getDomain(url) {
+  const urlDomain = new URL(url).host;
+  return urlDomain;
+}
 
 class Crawler {
   constructor() {
@@ -113,9 +118,8 @@ class Crawler {
     console.log("Got good paragraphs", goodParagraphs);
 
     const storageLinks = await this.retrieve('links');
-
-    const urlDomain = new URL(url).host;
-    const newLinks = this.getNewLinks(goodParagraphs);
+    const urlDomain = getDomain(url);
+    const newLinks = this.getNewLinks(goodParagraphs, urlDomain);
     console.log("Found new links", newLinks);
 
     if (this.curatedDomains.has(urlDomain)) {
@@ -165,7 +169,7 @@ class Crawler {
     }
   }
 
-  getNewLinks(goodParagraphs) {
+  getNewLinks(goodParagraphs, domain) {
     // TODO: - Check for relative links which are stored as "chrome-extension://"
     //       - Remove # fragments of links
     //       - Add in root page for URLs?
@@ -176,9 +180,15 @@ class Crawler {
         for (let j=0; j<p.links.length; ++j) {
           const link = p.links[j];
           if (link.startsWith('http') && link.length <= MAX_URL_LENGTH) {
-            newLinks.add(link);
-            if (newLinks.size >= MAX_NEW_LINKS) {
-              return newLinks;
+            const linkUrl = new URL(link);
+            // Only consider links to external domains
+            if (linkUrl.host !== domain) {
+              // Remove the hash fragment
+              linkUrl.hash = '';
+              newLinks.add(linkUrl.href);
+              if (newLinks.size >= MAX_NEW_LINKS) {
+                return newLinks;
+              }
             }
           }
         }
@@ -224,6 +234,7 @@ class Crawler {
     let batches = await this.retrieve('batches');
     if (batches && batches.length > 0) {
       const batchItems = batches.pop();
+      console.log("Sending batch with first item", Date.now(), batchItems[0]['url'])
       let userId = await this.getUserId();
       const batch = {
         'user_id': userId,
