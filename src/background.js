@@ -52,25 +52,31 @@ class Crawler {
   constructor() {
     this.curatedDomains = [];
     this.domParser = new DOMParser();
+    this.links = {};
+    this.results = [];
+    this.batches = [];
   }
 
-  async loadCuratedDomains() {
+  async initialize() {
     const url = chrome.runtime.getURL('../../assets/data/hn-top-domains.json');
     const response = await fetch(url);
     const data = await response.json();
     this.curatedDomains = new Set(Object.keys(data));
     console.log("Loaded curated domains", this.curatedDomains);
 
-    const storageLinks = await this.retrieve('links');
-    console.log("Storage links", storageLinks);
-    if (!storageLinks) {
-      const links = {};
+    this.links = await this.retrieve('links');
+    console.log("Storage links", this.links);
+    if (!this.links) {
+      this.links = {};
       for (let i=0; i<20; ++i) {
         const link = 'https://' + chooseRandom([...this.curatedDomains]);
-        links[link] = 'curated';
+        this.links[link] = 'curated';
       }
-      await this.store('links', links);
+      await this.store('links', this.links);
     }
+
+    this.batches = await this.retrieve('batches');
+    this.results = await this.retrieve('results');
   }
 
   async retrieve(key) {
@@ -87,18 +93,15 @@ class Crawler {
 
   async setUp() {
     console.log("Starting up crawler extension");
-    await this.loadCuratedDomains();
+    await this.initialize();
     setInterval(this.runCrawlIteration.bind(this), 1000);
   }
 
   async runCrawlIteration() {
     console.log("Running crawl iteration");
-
-    const links = await this.retrieve('links');
-    console.log("Got links", links);
-    const chosenLink = chooseRandom(Object.keys(links))
-    console.log("Crawling url", chosenLink, links[chosenLink]);
-    await this.crawlURL(chosenLink, links[chosenLink]);
+    const chosenLink = chooseRandom(Object.keys(this.links))
+    console.log("Crawling url", chosenLink, this.links[chosenLink]);
+    await this.crawlURL(chosenLink, this.links[chosenLink]);
   }
 
   async crawlURL(url, source) {
@@ -116,7 +119,6 @@ class Crawler {
     const paragraphs = getParagraphs(dom, Node.TEXT_NODE);
     const goodParagraphs = paragraphs.filter(p => p.classType === 'good');
 
-    const storageLinks = await this.retrieve('links');
     const urlDomain = getDomain(url);
     const newLinks = this.getNewLinks(goodParagraphs, urlDomain);
     if (newLinks.size > 0) {
@@ -124,18 +126,18 @@ class Crawler {
     }
 
     newLinks.forEach(link => {
-      storageLinks[link] = url;
+      this.links[link] = url;
     });
 
     // Make sure we don't store too much
-    while (storageLinks.length > MAX_STORAGE_LINKS) {
-      const link = chooseRandom(storageLinks.keys());
-      delete storageLinks[link];
+    while (this.links.length > MAX_STORAGE_LINKS) {
+      const link = chooseRandom(this.links.keys());
+      delete this.links[link];
     }
 
     // Remove the URL we've just crawled
-    delete storageLinks[url];
-    await this.store('links', storageLinks);
+    delete this.links[url];
+    await this.store('links', this.links);
 
     if (dom.title && goodParagraphs.length > 0) {
       let extract = '';
@@ -197,25 +199,14 @@ class Crawler {
 
   async recordNewResult(result) {
     console.log("Recording new result", result);
-    let currentResults = await this.retrieve('results');
-    console.log("Got current results", currentResults);
-    if (!currentResults) {
-      currentResults = [];
+    this.results.push(result);
+    if (this.results.length >= BATCH_SIZE) {
+      this.batches.push(this.results);
+      this.results = [];
     }
 
-    currentResults.push(result);
-    if (currentResults.length >= BATCH_SIZE) {
-      let batches = await this.retrieve('batches');
-      console.log("Got batches", batches);
-      if (!batches) {
-        batches = [];
-      }
-      batches.push(currentResults);
-      await this.store('batches', batches);
-      currentResults = [];
-    }
-
-    await this.store('results', currentResults);
+    await this.store('batches', this.batches);
+    await this.store('results', this.results);
     await this.sendBatch();
   }
 
@@ -229,9 +220,8 @@ class Crawler {
   }
 
   async sendBatch() {
-    let batches = await this.retrieve('batches');
-    if (batches && batches.length > 0) {
-      const batchItems = batches.pop();
+    if (this.batches.length > 0) {
+      const batchItems = this.batches.pop();
       console.log("Sending batch with first item", Date.now(), batchItems[0]['url'])
       let userId = await this.getUserId();
       const batch = {
@@ -248,7 +238,10 @@ class Crawler {
       const result = await response.json();
       console.log("Batch post result", result);
       if (result['status'] === 'ok') {
-        await this.store('batches', batches);
+        await this.store('batches', this.batches);
+      } else {
+        // Saving the batch failed, so put it back on our list
+        this.batches.push(batchItems);
       }
     }
   }
