@@ -59,7 +59,7 @@ class Crawler {
   }
 
   async initialize() {
-    const url = chrome.runtime.getURL('../../assets/data/hn-top-domains.json');
+    const url = chrome.runtime.getURL('../../hn-top-domains.json');
     const response = await fetch(url);
     const data = await response.json();
     this.curatedDomains = new Set(Object.keys(data));
@@ -76,8 +76,8 @@ class Crawler {
       await this.store('links', this.links);
     }
 
-    this.batches = await this.retrieve('batches');
-    this.results = await this.retrieve('results');
+    this.batches = await this.retrieve('batches') || [];
+    this.results = await this.retrieve('results') || [];
   }
 
   async retrieve(key) {

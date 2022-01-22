@@ -4,15 +4,15 @@
   "version": "0.1",
   "manifest_version": 2,
   "background": {
-    "scripts": ["./dist/assets/background.js"],
+    "scripts": ["./assets/background.js"],
     "persistent": true
   },
   "permissions": ["storage", "management", "https://*/", "http://*/"],
   "icons": {
-    "16": "./assets/images/mwmbl16.png",
-    "32": "./assets/images/mwmbl32.png",
-    "48": "./assets/images/mwmbl48.png",
-    "128": "./assets/images/mwmbl128.png"
+    "16": "./mwmbl16.png",
+    "32": "./mwmbl32.png",
+    "48": "./mwmbl48.png",
+    "128": "./mwmbl128.png"
   },
-  "options_page": "./dist/options/index.html"
+  "options_page": "./options/index.html"
 }
