@@ -43,7 +43,11 @@ const cleanSpaces = (rawString) => rawString.replace(whitespace, '').trim();
 const splitOnLines = (string) => string.split(lineEndings);
 
 const robustSplit = (string) => {
-  return !string.includes('<html>') ? [...string.match(recordSlices)].map(cleanSpaces) : [];
+  const matches = string.match(recordSlices);
+  if (!matches) {
+    return [];
+  }
+  return !string.includes('<html>') ? [...matches].map(cleanSpaces) : [];
 };
 
 const parseRecord = (line) => {
@@ -181,6 +185,10 @@ const getRecordsForAgent = (userAgent, domainBots) => {
 
 export const canVisit = (url, userAgent, parsedRobots) => {
   const botGroup = getRecordsForAgent(userAgent, parsedRobots);
+  if (!botGroup) {
+    return true;
+  }
+
   const allow = applyRecords(url, botGroup.allow);
   const disallow = applyRecords(url, botGroup.disallow);
   const noAllows = allow.numApply === 0 && disallow.numApply > 0;
