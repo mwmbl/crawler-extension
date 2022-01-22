@@ -10,6 +10,7 @@ const BATCH_SIZE = 20;
 const MAX_URL_LENGTH = 150
 const NUM_TITLE_CHARS = 65
 const NUM_EXTRACT_CHARS = 155
+const BAD_URL_REGEX = /\/\/localhost\b|\.jpg$|\.png$|\.js$|\.gz$|\.zip$|\.pdf$|\.bz2$|\.ipynb$|\.py$/.compile()
 
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -179,6 +180,10 @@ class Crawler {
         for (let j=0; j<p.links.length; ++j) {
           const link = p.links[j];
           if (link.startsWith('http') && link.length <= MAX_URL_LENGTH) {
+            if (link.search(BAD_URL_REGEX)) {
+              console.log("Found bad URL", link);
+              continue;
+            }
             const linkUrl = new URL(link);
             // Only consider links to external domains
             // We can take any link from curated domains, and any link to curated domains

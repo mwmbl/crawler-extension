@@ -181,6 +181,10 @@ const getRecordsForAgent = (userAgent, domainBots) => {
 
 export const canVisit = (url, userAgent, parsedRobots) => {
   const botGroup = getRecordsForAgent(userAgent, parsedRobots);
+  if (!botGroup) {
+    return true;
+  }
+
   const allow = applyRecords(url, botGroup.allow);
   const disallow = applyRecords(url, botGroup.disallow);
   const noAllows = allow.numApply === 0 && disallow.numApply > 0;
