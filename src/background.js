@@ -10,7 +10,7 @@ const BATCH_SIZE = 20;
 const MAX_URL_LENGTH = 150
 const NUM_TITLE_CHARS = 65
 const NUM_EXTRACT_CHARS = 155
-const BAD_URL_REGEX = /\/\/localhost\b|\.jpg$|\.png$|\.js$|\.gz$|\.zip$|\.pdf$|\.bz2$|\.ipynb$|\.py$/.compile()
+const BAD_URL_REGEX = /\/\/localhost\b|\.jpg$|\.png$|\.js$|\.gz$|\.zip$|\.pdf$|\.bz2$|\.ipynb$|\.py$/
 
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -103,6 +103,10 @@ class Crawler {
     const chosenLink = chooseRandom(Object.keys(this.links))
     console.log("Crawling url", chosenLink, this.links[chosenLink]);
     await this.crawlURL(chosenLink, this.links[chosenLink]);
+
+    // Remove the URL we've just crawled
+    delete this.links[chosenLink];
+    await this.store('links', this.links);
   }
 
   async crawlURL(url, source) {
@@ -110,7 +114,14 @@ class Crawler {
       return;
     }
 
-    const response = await fetch(url);
+    let response;
+    try {
+      response = await fetch(url);
+    } catch (e) {
+      console.log("Error fetching", url, e);
+      return;
+    }
+
     const responseText = response.ok ? await response.text() : null;
     if (!responseText) {
       return;
@@ -135,10 +146,6 @@ class Crawler {
       const link = chooseRandom(this.links.keys());
       delete this.links[link];
     }
-
-    // Remove the URL we've just crawled
-    delete this.links[url];
-    await this.store('links', this.links);
 
     if (dom.title && goodParagraphs.length > 0) {
       let extract = '';
@@ -180,7 +187,7 @@ class Crawler {
         for (let j=0; j<p.links.length; ++j) {
           const link = p.links[j];
           if (link.startsWith('http') && link.length <= MAX_URL_LENGTH) {
-            if (link.search(BAD_URL_REGEX)) {
+            if (link.search(BAD_URL_REGEX) >= 0) {
               console.log("Found bad URL", link);
               continue;
             }

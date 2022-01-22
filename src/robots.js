@@ -43,7 +43,11 @@ const cleanSpaces = (rawString) => rawString.replace(whitespace, '').trim();
 const splitOnLines = (string) => string.split(lineEndings);
 
 const robustSplit = (string) => {
-  return !string.includes('<html>') ? [...string.match(recordSlices)].map(cleanSpaces) : [];
+  const matches = string.match(recordSlices);
+  if (!matches) {
+    return [];
+  }
+  return !string.includes('<html>') ? [...matches].map(cleanSpaces) : [];
 };
 
 const parseRecord = (line) => {
