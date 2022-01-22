@@ -1,7 +1,7 @@
 {
-  "name": "Getting Started Example",
-  "description": "Build an Extension!",
-  "version": "1.0",
+  "name": "Mwmbl Web Crawler",
+  "description": "Help crawl the web to build a non-profit search engine",
+  "version": "0.1",
   "manifest_version": 2,
   "background": {
     "scripts": ["./dist/assets/background.js"],
@@ -9,10 +9,10 @@
   },
   "permissions": ["storage", "management", "https://*/", "http://*/"],
   "icons": {
-    "16": "./assets/images/get_started16.png",
-    "32": "./assets/images/get_started32.png",
-    "48": "./assets/images/get_started48.png",
-    "128": "./assets/images/get_started128.png"
+    "16": "./assets/images/mwmbl16.png",
+    "32": "./assets/images/mwmbl32.png",
+    "48": "./assets/images/mwmbl48.png",
+    "128": "./assets/images/mwmbl128.png"
   },
   "options_page": "./dist/options/index.html"
 }
