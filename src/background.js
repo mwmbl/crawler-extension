@@ -44,11 +44,6 @@ function chooseRandom(array) {
 }
 
 
-function getDomain(url) {
-  const urlDomain = new URL(url).host;
-  return urlDomain;
-}
-
 class Crawler {
   constructor() {
     this.curatedDomains = [];
@@ -103,8 +98,8 @@ class Crawler {
   }
 
   async runCrawlIteration() {
-    console.log("Running crawl iteration");
-    if (this.links.length === 0) {
+    console.log("Running crawl iteration", this.links);
+    if (Object.keys(this.links).length === 0) {
       console.log("Run out of links, seeding again");
       await this.seedLinks();
     }
@@ -140,7 +135,14 @@ class Crawler {
     const paragraphs = getParagraphs(dom, Node.TEXT_NODE);
     const goodParagraphs = paragraphs.filter(p => p.classType === 'good');
 
-    const urlDomain = getDomain(url);
+    let urlDomain;
+    try {
+      urlDomain = new URL(url).host;
+    } catch(e) {
+      console.log("Unable to parse URL to get domain", url);
+      return;
+    }
+
     const newLinks = this.getNewLinks(goodParagraphs, urlDomain);
     if (newLinks.size > 0) {
       console.log("Found new links from", url, newLinks);
@@ -200,7 +202,15 @@ class Crawler {
               console.log("Found bad URL", link);
               continue;
             }
-            const linkUrl = new URL(link);
+
+            let linkUrl;
+            try {
+              linkUrl = new URL(link);
+            } catch(e) {
+              console.log("Unable to parse URL", e);
+              continue;
+            }
+
             // Only consider links to external domains
             // We can take any link from curated domains, and any link to curated domains
             if (linkUrl.host !== domain && (sourceIsCurated || this.curatedDomains.has(linkUrl.host))) {
@@ -268,7 +278,13 @@ class Crawler {
   }
 
   async robotsAllowed(url) {
-    const parsedUrl = new URL(url);
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch (e) {
+      console.log("Unable to parse URL to get robots.txt", e);
+      return false;
+    }
     const robotsUrl = parsedUrl.protocol + '//' + parsedUrl.host + '/robots.txt'
     let robotsResponse;
     try {
