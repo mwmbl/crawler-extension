@@ -68,16 +68,20 @@ class Crawler {
     this.links = await this.retrieve('links');
     console.log("Storage links", this.links);
     if (!this.links) {
-      this.links = {};
-      for (let i=0; i<20; ++i) {
-        const link = 'https://' + chooseRandom([...this.curatedDomains]);
-        this.links[link] = 'curated';
-      }
-      await this.store('links', this.links);
+      await this.seedLinks();
     }
 
     this.batches = await this.retrieve('batches') || [];
     this.results = await this.retrieve('results') || [];
+  }
+
+  async seedLinks() {
+    this.links = {};
+    for (let i = 0; i < 20; ++i) {
+      const link = 'https://' + chooseRandom([...this.curatedDomains]);
+      this.links[link] = 'curated';
+    }
+    await this.store('links', this.links);
   }
 
   async retrieve(key) {
@@ -100,6 +104,11 @@ class Crawler {
 
   async runCrawlIteration() {
     console.log("Running crawl iteration");
+    if (this.links.length === 0) {
+      console.log("Run out of links, seeding again");
+      await this.seedLinks();
+    }
+
     const chosenLink = chooseRandom(Object.keys(this.links))
     console.log("Crawling url", chosenLink, this.links[chosenLink]);
     await this.crawlURL(chosenLink, this.links[chosenLink]);
