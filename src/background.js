@@ -44,11 +44,6 @@ function chooseRandom(array) {
 }
 
 
-function getDomain(url) {
-  const urlDomain = new URL(url).host;
-  return urlDomain;
-}
-
 class Crawler {
   constructor() {
     this.curatedDomains = [];
@@ -131,7 +126,7 @@ class Crawler {
     const paragraphs = getParagraphs(dom, Node.TEXT_NODE);
     const goodParagraphs = paragraphs.filter(p => p.classType === 'good');
 
-    const urlDomain = getDomain(url);
+    const urlDomain = new URL(url).host;
     const newLinks = this.getNewLinks(goodParagraphs, urlDomain);
     if (newLinks.size > 0) {
       console.log("Found new links from", url, newLinks);

@@ -2,12 +2,12 @@
   "name": "Mwmbl Web Crawler",
   "description": "Help crawl the web to build a non-profit search engine",
   "version": "0.1",
-  "manifest_version": 3,
+  "manifest_version": 2,
   "background": {
-    "service_worker": "./assets/background.js"
+    "scripts": ["./assets/background.js"],
+    "persistent": true
   },
-  "permissions": ["storage", "management"],
-  "host_permissions":  ["https://*/", "http://*/"],
+  "permissions": ["storage", "management", "https://*/", "http://*/"],
   "icons": {
     "16": "./mwmbl16.png",
     "32": "./mwmbl32.png",
