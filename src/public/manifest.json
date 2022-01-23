@@ -13,6 +13,5 @@
     "32": "./mwmbl32.png",
     "48": "./mwmbl48.png",
     "128": "./mwmbl128.png"
-  },
-  "options_page": "./options/index.html"
+  }
 }
