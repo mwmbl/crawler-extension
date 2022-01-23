@@ -41,8 +41,6 @@ export default defineConfig(({ command }) => ({
     rollupOptions: {
       input: {
         background: r('src/background.js'),
-        options: r('src/options/index.html'),
-        popup: r('src/popup/index.html'),
       },
       output: {
         entryFileNames: 'assets/[name].js'
