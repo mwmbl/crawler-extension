@@ -3,7 +3,8 @@ import {getParagraphs} from "./justext";
 
 
 const POST_BATCH_URL = 'https://crawler-server-oq4r5q2hsq-ue.a.run.app/batches/';
-const MAX_NEW_LINKS = 20;
+const NUM_SEED_DOMAINS = 100;
+const MAX_NEW_LINKS = 30;
 const MAX_STORAGE_LINKS = 5000;
 const BATCH_SIZE = 20;
 
@@ -72,7 +73,7 @@ class Crawler {
 
   async seedLinks() {
     this.links = {};
-    for (let i = 0; i < 20; ++i) {
+    for (let i = 0; i < NUM_SEED_DOMAINS; ++i) {
       const link = 'https://' + chooseRandom([...this.curatedDomains]);
       this.links[link] = 'curated';
     }
@@ -104,6 +105,7 @@ class Crawler {
       await this.seedLinks();
     }
 
+    console.log("Choosing URL, num links:", Object.keys(this.links).length)
     const chosenLink = chooseRandom(Object.keys(this.links))
     console.log("Crawling url", chosenLink, this.links[chosenLink]);
     await this.crawlURL(chosenLink, this.links[chosenLink]);
@@ -153,7 +155,7 @@ class Crawler {
     });
 
     // Make sure we don't store too much
-    while (this.links.length > MAX_STORAGE_LINKS) {
+    while (Object.keys(this.links).length > MAX_STORAGE_LINKS) {
       const link = chooseRandom(this.links.keys());
       delete this.links[link];
     }
@@ -217,6 +219,14 @@ class Crawler {
               // Remove the hash fragment
               linkUrl.hash = '';
               newLinks.add(linkUrl.href);
+
+              // Add the root URL, but only if there isn't already a version with '/' on the end
+              const rootUrl = linkUrl.protocol + '//' + linkUrl.host;
+              const rootUrlWithSlash = rootUrl + '/';
+              if (!newLinks.has(rootUrlWithSlash) && !(rootUrlWithSlash in this.links)) {
+                newLinks.add(rootUrl);
+              }
+
               if (newLinks.size >= MAX_NEW_LINKS) {
                 return newLinks;
               }
