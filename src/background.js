@@ -7,6 +7,7 @@ const NUM_SEED_DOMAINS = 100;
 const MAX_NEW_LINKS = 30;
 const MAX_STORAGE_LINKS = 5000;
 const BATCH_SIZE = 20;
+const MIN_UNIQUE_DOMAINS = 10;
 
 const MAX_URL_LENGTH = 150
 const NUM_TITLE_CHARS = 65
@@ -100,8 +101,12 @@ class Crawler {
 
   async runCrawlIteration() {
     console.log("Running crawl iteration", this.links);
-    if (Object.keys(this.links).length === 0) {
-      console.log("Run out of links, seeding again");
+
+    // TODO: Check the number of unique domains. If we don't have enough, scrap what's there and seed again.
+    //       This prevents getting stuck in a loop of two domains pointing at each other.
+    const uniqueDomains = this.getUniqueDomains();
+    if (uniqueDomains.size <= MIN_UNIQUE_DOMAINS) {
+      console.log("Run out of links, seeding again", uniqueDomains);
       await this.seedLinks();
     }
 
@@ -113,6 +118,20 @@ class Crawler {
     // Remove the URL we've just crawled
     delete this.links[chosenLink];
     await this.store('links', this.links);
+  }
+
+  getUniqueDomains() {
+    const domains = new Set();
+    for (const url in this.links) {
+      try {
+        const domain = new URL(url).host;
+        domains.add(domain);
+      } catch (e) {
+        console.log("Found bad link", url);
+        delete this.links[url];
+      }
+    }
+    return domains;
   }
 
   async crawlURL(url, source) {
