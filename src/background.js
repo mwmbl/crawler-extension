@@ -175,7 +175,7 @@ class Crawler {
 
     // Make sure we don't store too much
     while (Object.keys(this.links).length > MAX_STORAGE_LINKS) {
-      const link = chooseRandom(this.links.keys());
+      const link = chooseRandom(Object.keys(this.links));
       delete this.links[link];
     }
 
