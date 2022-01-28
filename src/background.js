@@ -2,7 +2,8 @@ import {canVisit, parser} from "./robots";
 import {getParagraphs} from "./justext";
 
 
-const POST_BATCH_URL = 'https://crawler-server-oq4r5q2hsq-ue.a.run.app/batches/';
+const CRAWLER_ONLINE_URL = 'https://api.crawler.mwmbl.org';
+const POST_BATCH_URL = 'https://api.crawler.mwmbl.org/batches/';
 const NUM_SEED_DOMAINS = 100;
 const MAX_NEW_LINKS = 30;
 const MAX_STORAGE_LINKS = 5000;
@@ -44,6 +45,17 @@ function run() {
 function chooseRandom(array) {
   const d = Math.floor(Math.random()*array.length);
   return array[d];
+}
+
+
+async function isOnline() {
+  try {
+    const response = await fetch(CRAWLER_ONLINE_URL);
+    return response.status === 200;
+  } catch (e) {
+    console.log("Error checking for online", e);
+    return false;
+  }
 }
 
 
@@ -103,7 +115,12 @@ class Crawler {
   }
 
   async runCrawlIteration() {
-    console.log("Running crawl iteration", this.links);
+    const onlineStatus = await isOnline();
+    console.log("Running crawl iteration, online:", onlineStatus);
+
+    if (!onlineStatus) {
+      return;
+    }
 
     // TODO: Check the number of unique domains. If we don't have enough, scrap what's there and seed again.
     //       This prevents getting stuck in a loop of two domains pointing at each other.
