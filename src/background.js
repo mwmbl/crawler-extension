@@ -2,12 +2,14 @@ import {canVisit, parser} from "./robots";
 import {getParagraphs} from "./justext";
 
 
-const POST_BATCH_URL = 'https://crawler-server-oq4r5q2hsq-ue.a.run.app/batches/';
+const CRAWLER_ONLINE_URL = 'https://api.crawler.mwmbl.org';
+const POST_BATCH_URL = 'https://api.crawler.mwmbl.org/batches/';
 const NUM_SEED_DOMAINS = 100;
 const MAX_NEW_LINKS = 30;
 const MAX_STORAGE_LINKS = 5000;
 const BATCH_SIZE = 20;
 const MIN_UNIQUE_DOMAINS = 10;
+const MAX_VISITED = 10000;
 
 const MAX_URL_LENGTH = 150
 const NUM_TITLE_CHARS = 65
@@ -46,6 +48,17 @@ function chooseRandom(array) {
 }
 
 
+async function isOnline() {
+  try {
+    const response = await fetch(CRAWLER_ONLINE_URL);
+    return response.status === 200;
+  } catch (e) {
+    console.log("Error checking for online", e);
+    return false;
+  }
+}
+
+
 class Crawler {
   constructor() {
     this.curatedDomains = [];
@@ -53,6 +66,7 @@ class Crawler {
     this.links = {};
     this.results = [];
     this.batches = [];
+    this.visited = new Set();
   }
 
   async initialize() {
@@ -70,6 +84,7 @@ class Crawler {
 
     this.batches = await this.retrieve('batches') || [];
     this.results = await this.retrieve('results') || [];
+    this.visited = new Set(await this.retrieve('visited') || []);
   }
 
   async seedLinks() {
@@ -100,7 +115,12 @@ class Crawler {
   }
 
   async runCrawlIteration() {
-    console.log("Running crawl iteration", this.links);
+    const onlineStatus = await isOnline();
+    console.log("Running crawl iteration, online:", onlineStatus);
+
+    if (!onlineStatus) {
+      return;
+    }
 
     // TODO: Check the number of unique domains. If we don't have enough, scrap what's there and seed again.
     //       This prevents getting stuck in a loop of two domains pointing at each other.
@@ -113,11 +133,22 @@ class Crawler {
     console.log("Choosing URL, num links:", Object.keys(this.links).length)
     const chosenLink = chooseRandom(Object.keys(this.links))
     console.log("Crawling url", chosenLink, this.links[chosenLink]);
+
+    // Remember what we crawl so we don't crawl it again
+    this.visited.add(chosenLink);
+
     await this.crawlURL(chosenLink, this.links[chosenLink]);
 
     // Remove the URL we've just crawled
     delete this.links[chosenLink];
     await this.store('links', this.links);
+
+    if (this.visited.size > MAX_VISITED) {
+      const randomVisited = chooseRandom([...this.visited]);
+      this.visited.delete(randomVisited);
+    }
+    console.log("Visited", this.visited);
+    await this.store('visited', [...this.visited]);
   }
 
   getUniqueDomains() {
@@ -170,7 +201,9 @@ class Crawler {
     }
 
     newLinks.forEach(link => {
-      this.links[link] = url;
+      if (!this.visited.has(link)) {
+        this.links[link] = url;
+      }
     });
 
     // Make sure we don't store too much
