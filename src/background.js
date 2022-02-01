@@ -59,6 +59,11 @@ async function isOnline() {
 }
 
 
+async function safeFetch(url) {
+  return await fetch(url, {credentials: 'omit'});
+}
+
+
 class Crawler {
   constructor() {
     this.curatedDomains = [];
@@ -172,7 +177,7 @@ class Crawler {
 
     let response;
     try {
-      response = await fetch(url);
+      response = await safeFetch(url);
     } catch (e) {
       console.log("Error fetching", url, e);
       return;
@@ -350,7 +355,7 @@ class Crawler {
     const robotsUrl = parsedUrl.protocol + '//' + parsedUrl.host + '/robots.txt'
     let robotsResponse;
     try {
-      robotsResponse = await fetch(robotsUrl);
+      robotsResponse = await safeFetch(robotsUrl);
     } catch (error) {
       console.log("Error fetching robots", error);
       return true;
