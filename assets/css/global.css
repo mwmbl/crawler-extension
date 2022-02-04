@@ -1,0 +1,30 @@
+body {
+  overflow-y: scroll;
+  background-color: var(--light-color);
+}
+
+.brand-title {
+  text-align: center;
+  font-weight: var(--black-font-weight);
+  font-size: 1.2rem;
+  margin: 0 15px 10px 15px;
+}
+
+.log-list {
+  display: flex;
+  flex-direction: column;
+  list-style-type: none;
+  padding: 10px;
+  gap: 10px;
+  margin: 0;
+}
+
+.log-list>li {
+  border-radius: 10px;
+  padding: 10px;
+  background-color: var(--gray-color);
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

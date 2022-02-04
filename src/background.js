@@ -79,7 +79,7 @@ class Crawler {
     const response = await fetch(url);
     const data = await response.json();
     this.curatedDomains = new Set(Object.keys(data));
-    console.log("Loaded curated domains", this.curatedDomains);
+    // console.log("Loaded curated domains", this.curatedDomains);
 
     this.links = await this.retrieve('links');
     console.log("Storage links", this.links);
@@ -131,13 +131,28 @@ class Crawler {
     //       This prevents getting stuck in a loop of two domains pointing at each other.
     const uniqueDomains = this.getUniqueDomains();
     if (uniqueDomains.size <= MIN_UNIQUE_DOMAINS) {
-      console.log("Run out of links, seeding again", uniqueDomains);
+      // console.log("Run out of links, seeding again", uniqueDomains);
       await this.seedLinks();
     }
 
-    console.log("Choosing URL, num links:", Object.keys(this.links).length)
+    // console.log("Choosing URL, num links:", Object.keys(this.links).length)
     const chosenLink = chooseRandom(Object.keys(this.links))
-    console.log("Crawling url", chosenLink, this.links[chosenLink]);
+    // console.log("Crawling url", chosenLink, this.links[chosenLink]);
+
+    const log = {
+      timestamp: Date.now(),
+      url: this.links[chosenLink]
+    }
+
+    let logs = await this.retrieve('logs');
+    logs = logs ? [...logs.slice(-9), log] : [log];
+
+    await this.store('logs', logs);
+
+    chrome.runtime.sendMessage({
+      type: 'start-crawl-url',
+      logs,
+    });
 
     // Remember what we crawl so we don't crawl it again
     this.visited.add(chosenLink);
@@ -152,7 +167,7 @@ class Crawler {
       const randomVisited = chooseRandom([...this.visited]);
       this.visited.delete(randomVisited);
     }
-    console.log("Visited", this.visited);
+    // console.log("Visited", this.visited);
     await this.store('visited', [...this.visited]);
   }
 
@@ -163,7 +178,7 @@ class Crawler {
         const domain = new URL(url).host;
         domains.add(domain);
       } catch (e) {
-        console.log("Found bad link", url);
+        // console.log("Found bad link", url);
         delete this.links[url];
       }
     }
@@ -179,7 +194,7 @@ class Crawler {
     try {
       response = await safeFetch(url);
     } catch (e) {
-      console.log("Error fetching", url, e);
+      // console.log("Error fetching", url, e);
       return;
     }
 
@@ -196,13 +211,13 @@ class Crawler {
     try {
       urlDomain = new URL(url).host;
     } catch(e) {
-      console.log("Unable to parse URL to get domain", url);
+      // console.log("Unable to parse URL to get domain", url);
       return;
     }
 
     const newLinks = this.getNewLinks(goodParagraphs, urlDomain);
     if (newLinks.size > 0) {
-      console.log("Found new links from", url, newLinks);
+      // console.log("Found new links from", url, newLinks);
     }
 
     newLinks.forEach(link => {
@@ -258,7 +273,7 @@ class Crawler {
           const link = p.links[j];
           if (link.startsWith('http') && link.length <= MAX_URL_LENGTH) {
             if (link.search(BAD_URL_REGEX) >= 0) {
-              console.log("Found bad URL", link);
+              // console.log("Found bad URL", link);
               continue;
             }
 
@@ -266,7 +281,7 @@ class Crawler {
             try {
               linkUrl = new URL(link);
             } catch(e) {
-              console.log("Unable to parse URL", e);
+              // console.log("Unable to parse URL", e);
               continue;
             }
 
@@ -296,7 +311,7 @@ class Crawler {
   }
 
   async recordNewResult(result) {
-    console.log("Recording new result", result);
+    // console.log("Recording new result", result);
     this.results.push(result);
     if (this.results.length >= BATCH_SIZE) {
       this.batches.push(this.results);
@@ -320,7 +335,7 @@ class Crawler {
   async sendBatch() {
     if (this.batches.length > 0) {
       const batchItems = this.batches.pop();
-      console.log("Sending batch with first item", Date.now(), batchItems[0]['url'])
+      // console.log("Sending batch with first item", Date.now(), batchItems[0]['url'])
       let userId = await this.getUserId();
       const batch = {
         'user_id': userId,
@@ -334,7 +349,7 @@ class Crawler {
         body: JSON.stringify(batch)
       });
       const result = await response.json();
-      console.log("Batch post result", result);
+      // console.log("Batch post result", result);
       if (result['status'] === 'ok') {
         await this.store('batches', this.batches);
       } else {
@@ -349,7 +364,7 @@ class Crawler {
     try {
       parsedUrl = new URL(url);
     } catch (e) {
-      console.log("Unable to parse URL to get robots.txt", e);
+      // console.log("Unable to parse URL to get robots.txt", e);
       return false;
     }
     const robotsUrl = parsedUrl.protocol + '//' + parsedUrl.host + '/robots.txt'
@@ -357,21 +372,21 @@ class Crawler {
     try {
       robotsResponse = await safeFetch(robotsUrl);
     } catch (error) {
-      console.log("Error fetching robots", error);
+      // console.log("Error fetching robots", error);
       return true;
     }
 
     if (!robotsResponse.ok) {
-      console.log("Bad response", robotsResponse);
+      // console.log("Bad response", robotsResponse);
       return true;
     }
 
     let robotsTxt = await robotsResponse.text();
     const parsedRobots = parser(robotsTxt);
-    console.log("Parsed robots", parsedRobots);
+    // console.log("Parsed robots", parsedRobots);
 
     const visitAllowed = canVisit(url, 'Mwmbl', parsedRobots);
-    console.log("Visit allowed", visitAllowed);
+    // console.log("Visit allowed", visitAllowed);
     return visitAllowed;
   }
 }
