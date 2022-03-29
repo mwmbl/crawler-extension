@@ -16,7 +16,11 @@ const createLogItem = (log) => {
   const hours = time.getHours()
   const minutes = time.getMinutes();
   const seconds = time.getSeconds();
-  logElement.textContent = `${hours}:${(minutes < 10 ? "0" : "") + minutes}:${(seconds < 10 ? "0" : "") + seconds} - ${log.url}`;
+  const linkElement = document.createElement('a');
+  linkElement.href = log.url;
+  linkElement.innerText = log.url;
+  logElement.textContent = `${hours}:${(minutes < 10 ? "0" : "") + minutes}:${(seconds < 10 ? "0" : "") + seconds} - `;
+  logElement.appendChild(linkElement);
   logListElement.prepend(logElement);
 }
 
