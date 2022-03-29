@@ -1,7 +1,7 @@
 {
   "name": "Mwmbl Web Crawler",
   "description": "Help crawl the web to build a non-profit search engine",
-  "version": "0.2.4",
+  "version": "0.3",
   "manifest_version": 2,
   "background": {
     "scripts": ["./assets/background.js"],
