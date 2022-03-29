@@ -16,7 +16,6 @@ const createLogItem = (log) => {
   const hours = time.getHours()
   const minutes = time.getMinutes();
   const seconds = time.getSeconds();
-  console.log(time.getHours);
   logElement.textContent = `${hours}:${(minutes < 10 ? "0" : "") + minutes}:${(seconds < 10 ? "0" : "") + seconds} - ${log.url}`;
   logListElement.prepend(logElement);
 }

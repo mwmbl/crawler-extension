@@ -168,7 +168,7 @@ class Crawler {
 
     const log = {
       timestamp: Date.now(),
-      url: this.links[chosenLink]
+      url: chosenLink
     }
 
     let logs = await this.retrieve('logs');
