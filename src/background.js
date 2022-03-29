@@ -11,9 +11,10 @@ const BATCH_SIZE = 20;
 const MIN_UNIQUE_DOMAINS = 10;
 const MAX_VISITED = 10000;
 
-const MAX_URL_LENGTH = 150
-const NUM_TITLE_CHARS = 65
-const NUM_EXTRACT_CHARS = 155
+const MAX_URL_LENGTH = 150;
+const NUM_TITLE_CHARS = 65;
+const NUM_EXTRACT_CHARS = 155;
+const MAX_FETCH_SIZE = 1024*1024;
 const BAD_URL_REGEX = /\/\/localhost\b|\.jpg$|\.png$|\.js$|\.gz$|\.zip$|\.pdf$|\.bz2$|\.ipynb$|\.py$/
 
 
@@ -60,7 +61,34 @@ async function isOnline() {
 
 
 async function safeFetch(url) {
-  return await fetch(url, {credentials: 'omit'});
+  const result = await fetch(url, {credentials: 'omit'});
+  const reader = result.body.getReader();
+  const stream = new ReadableStream({
+    async start(controller) {
+      let size = 0;
+      let completed = false;
+      while (size < MAX_FETCH_SIZE) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          completed = true;
+          break;
+        }
+
+        controller.enqueue(value);
+
+        size += value.length;
+      }
+
+      controller.close();
+      reader.releaseLock();
+
+      if (!completed) {
+        console.log("Truncated stream when fetching URL", url);
+      }
+    }
+  });
+  return new Response(stream);
 }
 
 
@@ -121,7 +149,6 @@ class Crawler {
 
   async runCrawlIteration() {
     const onlineStatus = await isOnline();
-    console.log("Running crawl iteration, online:", onlineStatus);
 
     if (!onlineStatus) {
       return;
