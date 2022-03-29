@@ -144,7 +144,9 @@ class Crawler {
   async setUp() {
     console.log("Starting up crawler extension");
     await this.initialize();
-    setInterval(this.runCrawlIteration.bind(this), 1000);
+    while (true) {
+      await this.runCrawlIteration();
+    }
   }
 
   async runCrawlIteration() {
