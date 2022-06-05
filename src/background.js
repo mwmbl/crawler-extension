@@ -4,6 +4,7 @@ import {getParagraphs} from "./justext";
 
 const CRAWLER_ONLINE_URL = 'https://api.crawler.mwmbl.org';
 const POST_BATCH_URL = 'https://api.crawler.mwmbl.org/batches/';
+const POST_NEW_BATCH_URL = 'http://localhost:8080/batches/new';
 const NUM_SEED_DOMAINS = 100;
 const MAX_NEW_LINKS = 30;
 const MAX_STORAGE_LINKS = 5000;
@@ -156,48 +157,19 @@ class Crawler {
       return;
     }
 
-    // TODO: Check the number of unique domains. If we don't have enough, scrap what's there and seed again.
-    //       This prevents getting stuck in a loop of two domains pointing at each other.
-    const uniqueDomains = this.getUniqueDomains();
-    if (uniqueDomains.size <= MIN_UNIQUE_DOMAINS) {
-      // console.log("Run out of links, seeding again", uniqueDomains);
-      await this.seedLinks();
+    let userId = await this.getUserId();
+    const response = await fetch(POST_NEW_BATCH_URL, {
+        method: 'POST',
+        cache: 'no-cache',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({user_id: userId})
+      });
+    const result = await response.json();
+    console.log("Got new batch of URLs to crawl", result);
+
+    for (let i=0; i<result.length; ++i) {
+      await this.crawlURL(result[i], 'api');
     }
-
-    // console.log("Choosing URL, num links:", Object.keys(this.links).length)
-    const chosenLink = chooseRandom(Object.keys(this.links))
-    // console.log("Crawling url", chosenLink, this.links[chosenLink]);
-
-    const log = {
-      timestamp: Date.now(),
-      url: chosenLink
-    }
-
-    let logs = await this.retrieve('logs');
-    logs = logs ? [...logs.slice(-9), log] : [log];
-
-    await this.store('logs', logs);
-
-    chrome.runtime.sendMessage({
-      type: 'start-crawl-url',
-      logs,
-    });
-
-    // Remember what we crawl so we don't crawl it again
-    this.visited.add(chosenLink);
-
-    await this.crawlURL(chosenLink, this.links[chosenLink]);
-
-    // Remove the URL we've just crawled
-    delete this.links[chosenLink];
-    await this.store('links', this.links);
-
-    if (this.visited.size > MAX_VISITED) {
-      const randomVisited = chooseRandom([...this.visited]);
-      this.visited.delete(randomVisited);
-    }
-    // console.log("Visited", this.visited);
-    await this.store('visited', [...this.visited]);
   }
 
   getUniqueDomains() {
@@ -215,7 +187,9 @@ class Crawler {
   }
 
   async crawlURL(url, source) {
+    console.log("Crawling URL", url)
     if (! await this.robotsAllowed(url)) {
+      console.log("Robots not allowed for URL", url);
       return;
     }
 
@@ -396,6 +370,12 @@ class Crawler {
       // console.log("Unable to parse URL to get robots.txt", e);
       return false;
     }
+
+    // Always allow the root domain
+    if (parsedUrl.pathname === '/') {
+      return true;
+    }
+
     const robotsUrl = parsedUrl.protocol + '//' + parsedUrl.host + '/robots.txt'
     let robotsResponse;
     try {
