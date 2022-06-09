@@ -190,6 +190,8 @@ class Crawler {
       const item = await this.crawlURL(urlsToCrawl[i], 'api');
       batchItems.push(item);
 
+      await this.store('batch', batchItems);
+
       chrome.runtime.sendMessage({
         type: 'finish-crawl-url',
         item
