@@ -4,6 +4,7 @@ import { r, port, isDev } from './scripts/utils';
 
 export default defineConfig(({ command }) => ({
   root: r('src'),
+  publicDir: r('public'),
   define: {
     __DEV__: isDev,
   },
@@ -12,24 +13,13 @@ export default defineConfig(({ command }) => ({
       '~/': `${r('src')}/`,
     },
   },
-  base: command === 'serve' ? `http://localhost:${port}/` : '/dist/',
+  base: '/',
   server: {
     port,
     hmr: {
       host: 'localhost',
     },
   },
-  plugins: [
-    // rewrite assets to use relative path
-    {
-      name: 'assets-rewrite',
-      enforce: 'post',
-      apply: 'build',
-      transformIndexHtml(html, { path }) {
-        return html.replace(/"\/assets\//g, `"${relative(dirname(path), '/assets')}/`)
-      },
-    },
-  ],
   build: {
     outDir: r('dist'),
     emptyOutDir: true,
@@ -42,6 +32,7 @@ export default defineConfig(({ command }) => ({
     rollupOptions: {
       input: {
         background: r('src/background.js'),
+        popup: r('src/popup/index.html')
       },
       output: {
         entryFileNames: 'assets/[name].js'

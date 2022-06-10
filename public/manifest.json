@@ -1,7 +1,7 @@
 {
   "name": "Mwmbl Web Crawler",
   "description": "Help crawl the web to build a non-profit search engine",
-  "version": "0.2.4",
+  "version": "0.3",
   "manifest_version": 2,
   "background": {
     "scripts": ["./assets/background.js"],
@@ -13,5 +13,10 @@
     "32": "./mwmbl32.png",
     "48": "./mwmbl48.png",
     "128": "./mwmbl128.png"
+  },
+  "browser_action": {
+    "default_icon": "./mwmbl32.png",
+    "default_title": "Mwmbl - Web Crawler",
+    "default_popup": "./popup/index.html"
   }
 }
