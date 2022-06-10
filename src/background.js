@@ -4,8 +4,8 @@ import {getParagraphs} from "./justext";
 
 const CRAWLER_ONLINE_URL = 'https://api.crawler.mwmbl.org';
 // const POST_BATCH_URL = 'https://api.crawler.mwmbl.org/batches/';
-const POST_BATCH_URL = 'http://localhost:8080/batches/';
-const POST_NEW_BATCH_URL = 'http://localhost:8080/batches/new';
+const POST_BATCH_URL = 'http://95.216.215.29/batches/';
+const POST_NEW_BATCH_URL = 'http://95.216.215.29/batches/new';
 const NUM_SEED_DOMAINS = 100;
 const MAX_NEW_LINKS = 30;
 const MAX_STORAGE_LINKS = 5000;

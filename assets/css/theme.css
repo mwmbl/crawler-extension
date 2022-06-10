@@ -7,6 +7,8 @@
   --primary-color: #185ADB;
   --gray-color: #EEEEEE;
   --light-color: #F8F8F8;
+  --good-color: #88db8f;
+  --bad-color: #db8888;
 
   /* Fonts: */
   --regular-font: 'Inter', sans-serif;

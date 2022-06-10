@@ -22,9 +22,17 @@ body {
 .log-list>li {
   border-radius: 10px;
   padding: 10px;
-  background-color: var(--gray-color);
+  /*background-color: var(--gray-color);*/
   font-size: 0.8rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.log-list>li.result-good {
+  background-color: var(--good-color);
+}
+
+.log-list>li.result-bad {
+  background-color: var(--bad-color);
 }
