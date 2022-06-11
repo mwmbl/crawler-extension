@@ -2,6 +2,11 @@
 
 Have you ever wanted to crawl the web? What could beat the excitement of discovering new things on the internets? It's never been easier: now you can crawl from the comfort of your favourite browser! At the same time you will be participating in building an [open source, non-profit search engine](https://mwmbl.org).
 
+Why?
+----
+
+Our goal is to eventually build a search engine that can compete with commercial ones. Since we don't have very much money, we have to build things differently from commercial search engines. In particular, crawling the web is costly. That's why we are asking you to help us. If many people contribute a small amount of CPU and bandwidth, we can, in time, compete at a very low cost.
+
 Screenshot
 ----------
 
