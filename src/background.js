@@ -2,16 +2,12 @@ import {canVisit, parser} from "./robots";
 import {getParagraphs} from "./justext";
 
 
-const CRAWLER_ONLINE_URL = 'https://api.crawler.mwmbl.org';
-// const POST_BATCH_URL = 'https://api.crawler.mwmbl.org/batches/';
-const POST_BATCH_URL = 'http://95.216.215.29/batches/';
-const POST_NEW_BATCH_URL = 'http://95.216.215.29/batches/new';
+const DOMAIN = 'https://api.crawler.mwmbl.org'
+const CRAWLER_ONLINE_URL = DOMAIN;
+const POST_BATCH_URL = DOMAIN + '/batches/';
+const POST_NEW_BATCH_URL = DOMAIN + '/batches/new';
 const NUM_SEED_DOMAINS = 100;
 const MAX_NEW_LINKS = 30;
-const MAX_STORAGE_LINKS = 5000;
-const BATCH_SIZE = 20;
-const MIN_UNIQUE_DOMAINS = 10;
-const MAX_VISITED = 10000;
 
 const MAX_URL_LENGTH = 150;
 const NUM_TITLE_CHARS = 65;
@@ -216,7 +212,6 @@ class Crawler {
   }
 
   async crawlURL(url) {
-    console.log("Crawling URL", url)
     if (! await this.robotsAllowed(url)) {
       return {
         'url': url,
