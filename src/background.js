@@ -8,6 +8,7 @@ const POST_BATCH_URL = DOMAIN + '/batches/';
 const POST_NEW_BATCH_URL = DOMAIN + '/batches/new';
 const NUM_SEED_DOMAINS = 100;
 const MAX_NEW_LINKS = 30;
+const TIMEOUT_MS = 3000;
 
 const MAX_URL_LENGTH = 150;
 const NUM_TITLE_CHARS = 65;
@@ -59,7 +60,7 @@ async function isOnline() {
 
 
 async function safeFetch(url) {
-  const result = await fetch(url, {credentials: 'omit'});
+  const result = await fetch(url, {credentials: 'omit', signal: AbortSignal.timeout(TIMEOUT_MS)});
   const reader = result.body.getReader();
   const stream = new ReadableStream({
     async start(controller) {
@@ -229,7 +230,7 @@ class Crawler {
     try {
       response = await safeFetch(url);
     } catch (e) {
-      // console.log("Error fetching", url, e);
+      console.log("Error fetching", url, e.name, e.message);
       return errorResult(url, e);
     }
 
