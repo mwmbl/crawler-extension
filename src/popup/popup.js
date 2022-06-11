@@ -21,6 +21,8 @@ const getItemPrefix = (item) => {
     prefix = '🤖';
   } else if (item.error !== null && item.error.name === 'AbortError') {
     prefix = '⏰';
+  } else if (item.status === 404) {
+    prefix = '😵';
   }
 
   if (item.status !== null) {
