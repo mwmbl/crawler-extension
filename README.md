@@ -22,6 +22,8 @@ The URLs to crawl are returned in batches from the central server. The browser e
 
 For each URL, it first checks if downloading is allowed by `robots.txt`. If it is, it then downloads the URL and attempts to extract the title and the beginning of the body text. An attempt is made to exclude boilerplate, but this is not 100% effective. The results are batched up and the completed batch is then sent to the central server.
 
+The batches are stored in long term storage (currently Backblaze) for later indexing. Currently indexing is a manual process, so you won't necessarily see pages you've crawled in search results any time soon.
+
 What do the emojis mean?
 ------------------------
 
