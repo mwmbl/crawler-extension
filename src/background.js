@@ -87,7 +87,12 @@ async function safeFetch(url) {
       }
     }
   });
-  return new Response(stream);
+  const options = {
+    status: result.status,
+    statusText: result.statusText,
+    headers: result.headers
+  }
+  return new Response(stream, options);
 }
 
 
