@@ -1,6 +1,6 @@
-# Mwmbl crawler extension - crawl the web from Firefox
+# An open source web crawler for the Mwmbl non-profit search engine - Firefox extension
 
-Have you ever wanted to crawl the web? What could beat the excitement of discovering new things on the internets? It's never been easier: now you can crawl from the comfort of your favourite browser! At the same time you will be participating in building an [open source, non-profit search engine](https://mwmbl.org).
+This is the next component in the [Mwmbl](https://mwmbl.org) non-profit search engine (see [discussion on Hacker News](https://news.ycombinator.com/item?id=29690877)) project: a distributed crawler where the clients run in volunteer's browsers.
 
 Why?
 ----
