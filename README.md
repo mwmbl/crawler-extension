@@ -1,6 +1,6 @@
 # An open source web crawler for the Mwmbl non-profit search engine - Firefox extension
 
-This is the next component in the [Mwmbl](https://mwmbl.org) non-profit search engine (see [discussion on Hacker News](https://news.ycombinator.com/item?id=29690877)) project: a distributed crawler where the clients run in volunteer's browsers.
+This is the next component in the [Mwmbl](https://mwmbl.org) non-profit search engine (see [discussion on Hacker News from December 2021](https://news.ycombinator.com/item?id=29690877)) project: a distributed crawler where the clients run in volunteer's browsers. This repo is for the Firefox extension, see also the [Crawler server](https://github.com/mwmbl/crawler-server), which is implemented in Python.
 
 Why?
 ----
@@ -40,6 +40,18 @@ Installation
 ------------
 
 Currently only Firefox is supported. Either install from [Mozilla add-ons](https://addons.mozilla.org/en-GB/firefox/addon/mwmbl-web-crawler/) or follow instructions below to build, then install by going to `about:debugging` select "This Firefox" then "Load Temporary Add-on".
+
+
+How to deploy/customise your own crawler
+----------------------------------------
+
+If you want to run your own crawler you will first need to deploy the crawler server. This will run happily on Google Cloud Run. You will also need a Backblaze or AWS account for storing the crawled batches. Change this line in `background.js`:
+
+```
+const DOMAIN = 'https://api.crawler.mwmbl.org'
+```
+
+to point to your crawler server instance. If you want to customize the curated domains (these influence the type of pages crawled) then you can edit the `hn-top-domains.json` file.
 
 
 How to build
