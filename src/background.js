@@ -232,14 +232,15 @@ class Crawler {
     }
 
     let response;
+    let responseText;
     try {
       response = await safeFetch(url);
+      responseText = response.ok ? await response.text() : null;
     } catch (e) {
       console.log("Error fetching", url, e.name, e.message);
       return errorResult(url, e);
     }
 
-    const responseText = response.ok ? await response.text() : null;
     if (!responseText) {
       return {
         'url': url,
@@ -394,11 +395,13 @@ class Crawler {
       return true;
     }
 
-    let robotsTxt = await robotsResponse.text();
-    const parsedRobots = parser(robotsTxt);
-    // console.log("Parsed robots", parsedRobots);
-
-    // console.log("Visit allowed", visitAllowed);
-    return canVisit(url, 'Mwmbl', parsedRobots);
+    try {
+      let robotsTxt = await robotsResponse.text();
+      const parsedRobots = parser(robotsTxt);
+      return canVisit(url, 'Mwmbl', parsedRobots);
+    } catch (e) {
+      console.log("Error retrieving robots text", e)
+      return true;
+    }
   }
 }
