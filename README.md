@@ -56,5 +56,10 @@ to point to your crawler server instance. If you want to customize the curated d
 
 How to build
 ------------
-
-Run `npm run build` in the root directory. The extension will be created in the `dist` folder.
+```
+git clone https://github.com/mwmbl/crawler-extension.git
+cd crawler-extension
+npm install
+npm run build
+```
+The extension will be created in the `dist` folder.
