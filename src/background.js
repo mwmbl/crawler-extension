@@ -2,12 +2,12 @@ import {canVisit, parser} from "./robots";
 import {getParagraphs} from "./justext";
 
 
-const DOMAIN = 'https://api.crawler.mwmbl.org'
-const CRAWLER_ONLINE_URL = DOMAIN;
-const POST_BATCH_URL = DOMAIN + '/batches/';
-const POST_NEW_BATCH_URL = DOMAIN + '/batches/new';
+const DOMAIN = 'https://api.mwmbl.org/'
+const CRAWLER_ONLINE_URL = DOMAIN + 'crawler/';
+const POST_BATCH_URL = DOMAIN + 'crawler/batches/';
+const POST_NEW_BATCH_URL = DOMAIN + 'crawler/batches/new';
 const NUM_SEED_DOMAINS = 100;
-const MAX_NEW_LINKS = 30;
+const MAX_NEW_LINKS = 300;
 const TIMEOUT_MS = 3000;
 
 const MAX_URL_LENGTH = 150;
@@ -249,7 +249,7 @@ class Crawler {
         'content': null,
         'error': {
           'name': 'NoResponseText',
-          'message': 'Robots do not allow this URL',
+          'message': 'No response found',
         }
       }
     }
@@ -258,15 +258,7 @@ class Crawler {
     const paragraphs = getParagraphs(dom, Node.TEXT_NODE);
     const goodParagraphs = paragraphs.filter(p => p.classType === 'good');
 
-    let urlDomain;
-    try {
-      urlDomain = new URL(url).host;
-    } catch(e) {
-      // console.log("Unable to parse URL to get domain", url);
-      return errorResult(url, e);
-    }
-
-    const newLinks = this.getNewLinks(goodParagraphs, urlDomain);
+    const newLinks = this.getNewLinks(goodParagraphs);
     if (newLinks.size > 0) {
       // console.log("Found new links from", url, newLinks);
     }
@@ -302,8 +294,7 @@ class Crawler {
     }
   }
 
-  getNewLinks(goodParagraphs, domain) {
-    const sourceIsCurated = this.curatedDomains.has(domain);
+  getNewLinks(goodParagraphs) {
     const newLinks = new Set();
     for (let i=0; i<goodParagraphs.length; ++i) {
       const p = goodParagraphs[i];
@@ -319,20 +310,14 @@ class Crawler {
             let linkUrl;
             try {
               linkUrl = new URL(link);
-            } catch(e) {
-              continue;
-            }
-
-            // Only consider links to external domains
-            // We can take any link from curated domains, and any link to curated domains
-            if (linkUrl.host !== domain && (sourceIsCurated || this.curatedDomains.has(linkUrl.host))) {
-              // Remove the hash fragment
               linkUrl.hash = '';
               newLinks.add(linkUrl.href);
+            } catch(e) {
+              // We can't parse this one, just skip
+            }
 
-              if (newLinks.size >= MAX_NEW_LINKS) {
-                return newLinks;
-              }
+            if (newLinks.size > MAX_NEW_LINKS) {
+              return newLinks;
             }
           }
         }
