@@ -1,8 +1,10 @@
 {
-  "name": "Mwmbl Web Crawler",
-  "description": "Help crawl the web to build a non-profit search engine",
+  "name": "__MSG_webextensionName__",
   "version": "0.4.4",
   "manifest_version": 2,
+  "short_name": "__MSG_webextensionShortName__",
+  "default_locale": "en",
+  "description": "__MSG_webextensionDescription__",
   "background": {
     "scripts": ["./assets/background.js"],
     "persistent": true
@@ -16,7 +18,7 @@
   },
   "browser_action": {
     "default_icon": "./mwmbl32.png",
-    "default_title": "Mwmbl - Web Crawler",
+    "default_title": "__MSG_browserActionDefaultTitle__",
     "default_popup": "./popup/index.html"
   }
 }
