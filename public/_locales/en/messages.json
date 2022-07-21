@@ -1,17 +1,17 @@
 {
-	"webextensionName": {
+	"manifest_name": {
 		"description": "Web-extension name.",
 		"message": "MWMBL Web Crawler"
 	},
-	"webextensionShortName": {
+	"manifest_shortName": {
 		"description": "Web-extension short name.",
 		"message": "MWMBL Crawl"
 	},
-	"webextensionDescription": {
+	"manifest_description": {
 		"description": "Web-extension description.",
 		"message": "Help crawl the web to build a non-profit search engine."
 	},
-	"browserActionDefaultTitle": {
+	"manifest_actionTitle": {
 		"description": "Toolbar button title.",
 		"message": "MWMBL Web Crawler"
 	}

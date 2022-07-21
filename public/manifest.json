@@ -1,10 +1,10 @@
 {
-  "name": "__MSG_webextensionName__",
+  "name": "__MSG_manifest_name__",
   "version": "0.4.4",
   "manifest_version": 2,
-  "short_name": "__MSG_webextensionShortName__",
+  "short_name": "__MSG_manifest_shortName__",
   "default_locale": "en",
-  "description": "__MSG_webextensionDescription__",
+  "description": "__MSG_manifest_description__",
   "background": {
     "scripts": ["./assets/background.js"],
     "persistent": true
@@ -18,7 +18,7 @@
   },
   "browser_action": {
     "default_icon": "./mwmbl32.png",
-    "default_title": "__MSG_browserActionDefaultTitle__",
+    "default_title": "__MSG_manifest_actionTitle__",
     "default_popup": "./popup/index.html"
   }
 }
