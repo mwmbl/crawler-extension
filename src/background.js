@@ -60,7 +60,14 @@ async function isOnline() {
 
 
 async function safeFetch(url) {
-  const result = await fetch(url, {credentials: 'omit', signal: AbortSignal.timeout(TIMEOUT_MS)});
+  const result = await fetch(url, {
+    credentials: 'omit',
+    headers: {
+      // https://github.com/mwmbl/crawler-extension/issues/31
+      'Accept-Language': 'en-GB,en-US;q=0.7,en;q=0.3'
+    },
+    signal: AbortSignal.timeout(TIMEOUT_MS)
+  });
   const reader = result.body.getReader();
   const stream = new ReadableStream({
     async start(controller) {
