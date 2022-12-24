@@ -65,12 +65,10 @@ async function safeFetch(url) {
   const stream = new ReadableStream({
     async start(controller) {
       let size = 0;
-      let completed = false;
       while (size < MAX_FETCH_SIZE) {
         const { done, value } = await reader.read();
 
         if (done) {
-          completed = true;
           break;
         }
 
@@ -81,10 +79,6 @@ async function safeFetch(url) {
 
       controller.close();
       reader.releaseLock();
-
-      if (!completed) {
-        console.log("Truncated stream when fetching URL", url);
-      }
     }
   });
   const options = {
@@ -124,10 +118,8 @@ class Crawler {
     const response = await fetch(url);
     const data = await response.json();
     this.curatedDomains = new Set(Object.keys(data));
-    // console.log("Loaded curated domains", this.curatedDomains);
 
     this.links = await this.retrieve('links');
-    console.log("Storage links", this.links);
     if (!this.links) {
       await this.seedLinks();
     }
@@ -159,7 +151,6 @@ class Crawler {
   }
 
   async setUp() {
-    console.log("Starting up crawler extension");
     await this.initialize();
     while (true) {
       try {
