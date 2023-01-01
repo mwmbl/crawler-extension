@@ -7,7 +7,7 @@ const CRAWLER_ONLINE_URL = DOMAIN + 'crawler/';
 const POST_BATCH_URL = DOMAIN + 'crawler/batches/';
 const POST_NEW_BATCH_URL = DOMAIN + 'crawler/batches/new';
 const NUM_SEED_DOMAINS = 100;
-const MAX_NEW_LINKS = 300;
+const MAX_NEW_LINKS = 50;
 const TIMEOUT_MS = 3000;
 
 const MAX_URL_LENGTH = 150;
@@ -256,11 +256,7 @@ class Crawler {
     const paragraphs = getParagraphs(dom, Node.TEXT_NODE);
     const goodParagraphs = paragraphs.filter(p => p.classType === 'good');
 
-    const newLinks = this.getNewLinks(goodParagraphs);
-    if (newLinks.size > 0) {
-      // console.log("Found new links from", url, newLinks);
-    }
-
+    const links = this.getNewLinks(paragraphs);
     let extract = '';
     for (let i = 0; i < goodParagraphs.length; ++i) {
       extract += ' ' + goodParagraphs[i].getText();
@@ -286,7 +282,8 @@ class Crawler {
       'content': {
         'title': title,
         'extract': extract,
-        'links': [...newLinks]
+        'links': [...links.newLinks],
+        'extra_links': [...links.extraLinks]
       },
       'error': null
     }
@@ -294,6 +291,7 @@ class Crawler {
 
   getNewLinks(goodParagraphs) {
     const newLinks = new Set();
+    const extraLinks = new Set();
     for (let i=0; i<goodParagraphs.length; ++i) {
       const p = goodParagraphs[i];
       if (p.links.length > 0) {
@@ -309,19 +307,25 @@ class Crawler {
             try {
               linkUrl = new URL(link);
               linkUrl.hash = '';
-              newLinks.add(linkUrl.href);
+              if (p.classType === 'good') {
+                newLinks.add(linkUrl.href);
+              } else {
+                if (!newLinks.has(linkUrl.href)) {
+                  extraLinks.add(linkUrl.href);
+                }
+              }
             } catch(e) {
               // We can't parse this one, just skip
             }
 
-            if (newLinks.size > MAX_NEW_LINKS) {
-              return newLinks;
+            if (newLinks.size + extraLinks.size > MAX_NEW_LINKS) {
+              return {newLinks, extraLinks};
             }
           }
         }
       }
     }
-    return newLinks;
+    return {newLinks, extraLinks};
   }
 
   async getUserId() {

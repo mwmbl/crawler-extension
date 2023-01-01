@@ -15,7 +15,6 @@ const LENGTH_LOW_DEFAULT = 70;
 const LENGTH_HIGH_DEFAULT = 200;
 const STOPWORDS_LOW_DEFAULT = 0.30;
 const STOPWORDS_HIGH_DEFAULT = 0.32;
-const NO_HEADINGS_DEFAULT = false;
 
 // Short and near-good headings within MAX_HEADING_DISTANCE characters before
 // a good paragraph are classified as good unless --no-headings is specified.
