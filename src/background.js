@@ -8,6 +8,7 @@ const POST_BATCH_URL = DOMAIN + 'crawler/batches/';
 const POST_NEW_BATCH_URL = DOMAIN + 'crawler/batches/new';
 const NUM_SEED_DOMAINS = 100;
 const MAX_NEW_LINKS = 50;
+const MAX_EXTRA_LINKS = 50;
 const TIMEOUT_MS = 3000;
 
 const MAX_URL_LENGTH = 150;
@@ -53,7 +54,7 @@ async function isOnline() {
     const response = await fetch(CRAWLER_ONLINE_URL);
     return response.status === 200;
   } catch (e) {
-    console.log("Error checking for online", e);
+    // console.log("Error checking for online", e);
     return false;
   }
 }
@@ -163,7 +164,7 @@ class Crawler {
       try {
         await this.runCrawlIteration();
       } catch (e) {
-        console.log("Exception running crawl iteration", e);
+        // console.log("Exception running crawl iteration", e);
       }
     }
   }
@@ -183,7 +184,7 @@ class Crawler {
         body: JSON.stringify({user_id: userId})
       });
     const urlsToCrawl = await response.json();
-    console.log("Got new batch of URLs to crawl", urlsToCrawl);
+    // console.log("Got new batch of URLs to crawl", urlsToCrawl);
 
     const batchItems = [];
     for (let i=0; i<urlsToCrawl.length; ++i) {
@@ -235,7 +236,7 @@ class Crawler {
       response = await safeFetch(url);
       responseText = response.ok ? await response.text() : null;
     } catch (e) {
-      console.log("Error fetching", url, e.name, e.message);
+      // console.log("Error fetching", url, e.name, e.message);
       return errorResult(url, e);
     }
 
@@ -308,9 +309,11 @@ class Crawler {
               linkUrl = new URL(link);
               linkUrl.hash = '';
               if (p.classType === 'good') {
-                newLinks.add(linkUrl.href);
+                if (newLinks.size < MAX_NEW_LINKS) {
+                  newLinks.add(linkUrl.href);
+                }
               } else {
-                if (!newLinks.has(linkUrl.href)) {
+                if (extraLinks.size < MAX_EXTRA_LINKS && !newLinks.has(linkUrl.href)) {
                   extraLinks.add(linkUrl.href);
                 }
               }
@@ -318,7 +321,7 @@ class Crawler {
               // We can't parse this one, just skip
             }
 
-            if (newLinks.size + extraLinks.size > MAX_NEW_LINKS) {
+            if (newLinks.size >= MAX_NEW_LINKS && extraLinks.size >= MAX_EXTRA_LINKS) {
               return {newLinks, extraLinks};
             }
           }
@@ -343,7 +346,7 @@ class Crawler {
       'user_id': userId,
       'items': batchItems
     }
-    console.log("Sending batch", batch);
+    // console.log("Sending batch", batch);
     const response = await fetch(POST_BATCH_URL, {
       method: 'POST',
       cache: 'no-cache',
@@ -351,7 +354,7 @@ class Crawler {
       body: JSON.stringify(batch)
     });
     const result = await response.json();
-    console.log("Batch post result", result);
+    // console.log("Batch post result", result);
   }
 
   async robotsAllowed(url) {
@@ -387,7 +390,7 @@ class Crawler {
       const parsedRobots = parser(robotsTxt);
       return canVisit(url, 'Mwmbl', parsedRobots);
     } catch (e) {
-      console.log("Error retrieving robots text", e)
+      // console.log("Error retrieving robots text", e)
       return true;
     }
   }
