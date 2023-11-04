@@ -9,6 +9,12 @@
     "scripts": ["./assets/background.js", "./assets/worker.js"],
     "persistent": true
   },
+  "content_scripts": [
+    {
+      "matches": ["https://*.mwmbl.org/?q=*"],
+      "js": ["./assets/content.js"]
+    }
+  ],
   "permissions": ["storage", "management", "https://*/", "http://*/"],
   "icons": {
     "16": "./mwmbl16.png",
