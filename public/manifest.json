@@ -6,7 +6,7 @@
   "default_locale": "en",
   "description": "__MSG_manifest_description__",
   "background": {
-    "scripts": ["./assets/background.js"],
+    "scripts": ["./assets/background.js", "./assets/worker.js"],
     "persistent": true
   },
   "permissions": ["storage", "management", "https://*/", "http://*/"],
