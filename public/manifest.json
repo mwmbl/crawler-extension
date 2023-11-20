@@ -11,7 +11,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://*.mwmbl.org/?q=*"],
+      "matches": ["https://*.mwmbl.org/?q=*", "http://localhost/?q=*"],
       "js": ["./assets/content.js"]
     }
   ],
