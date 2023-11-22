@@ -72,7 +72,22 @@ function encodeParametersFromResultArray(q, results) {
 }
 
 
+const retrieve = async (key) => {
+  const promise = new Promise(resolve => {
+    chrome.storage.local.get([key], resolve);
+  });
+  const result = await promise;
+  return result[key];
+}
+
+
 async function enhanceQuery() {
+    const crawl = await retrieve('google');
+    if (!crawl) {
+        console.log("Enhanced query not enabled")
+        return;
+    }
+
     // Parse the query string and assign parameters to `params` object
     const params = new URLSearchParams(window.location.search);
     const q = params.get('q');
