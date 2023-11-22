@@ -130,6 +130,7 @@ class Crawler {
   }
 
   async retrieve(key) {
+    // const result = await chrome.storage.local.get([key]);
     const promise = new Promise(resolve => {
       chrome.storage.local.get([key], resolve);
     });
@@ -145,7 +146,13 @@ class Crawler {
     await this.initialize();
     while (true) {
       try {
-        await this.runCrawlIteration();
+        const crawl = await this.retrieve("crawl");
+        if (crawl) {
+          await this.runCrawlIteration();
+        } else {
+          // Sleep for 5s
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        }
       } catch (e) {
         // console.log("Exception running crawl iteration", e);
       }
@@ -171,6 +178,11 @@ class Crawler {
 
     const batchItems = [];
     for (let i=0; i<urlsToCrawl.length; ++i) {
+      const crawl = await this.retrieve("crawl");
+      if (!crawl) {
+        break;
+      }
+
       const item = await this.crawlURL(urlsToCrawl[i], 'api');
       batchItems.push(item);
 
@@ -379,9 +391,10 @@ class Crawler {
   }
 }
 
+let crawler = null;
 function run() {
-  const crawler = new Crawler();
-  crawler.setUp();
+  if (crawler === null) {
+    crawler = new Crawler();
+    crawler.setUp();
+  }
 }
-
-run();

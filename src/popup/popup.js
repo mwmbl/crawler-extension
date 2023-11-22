@@ -10,6 +10,10 @@ const retrieve = async (key) => {
   return result[key];
 }
 
+const store = async (key, value) => {
+  await chrome.storage.local.set({[key]: value});
+}
+
 // TODO: create different types of elements based on the result
 
 
@@ -50,7 +54,11 @@ const createLogItem = (item) => {
 }
 
 (async () => {
-  (await retrieve('batch')).forEach(item => {
+  const batch = await retrieve('batch');
+  if (batch === undefined) {
+    return;
+  }
+  batch.forEach(item => {
     createLogItem(item);
   });
 })();
@@ -61,3 +69,42 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     createLogItem(message.item);
   }
 });
+
+// Add a handler to the checkbox and store the preference in storage
+const crawlToggle = document.querySelector('#crawl');
+const googleToggle = document.querySelector('#google');
+
+function getToggleHandler(toggle, key) {
+  return async (e) => {
+    const enabled = toggle.checked;
+    await store(key, enabled);
+    console.log("Stored value", key, enabled);
+  }
+}
+
+function initializeToggle(element, key, defaultValue) {
+  // If there is nothing in storage, default to true
+  retrieve(key).then(value => {
+    if (value === undefined) {
+      value = defaultValue;
+      store(key, value).then(() => {
+        element.checked = value;
+      });
+    } else {
+      element.checked = value;
+    }
+
+    // Wait 100 milliseconds then enable the animation
+    setTimeout(() => {
+      element.nextElementSibling.classList.add('initialized');
+    }, 100);
+  });
+}
+
+console.log("Initializing toggles");
+
+crawlToggle.addEventListener('change', getToggleHandler(crawlToggle, 'crawl'));
+googleToggle.addEventListener('change', getToggleHandler(googleToggle, 'google'));
+
+initializeToggle(crawlToggle, 'crawl', true);
+initializeToggle(googleToggle, 'google', false);
