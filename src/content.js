@@ -1,5 +1,4 @@
-
-console.log("Hello from content.js");
+const QUERY_URL = 'https://mwmbl.org/app/home?';
 
 
 function querySelectorInnerText(result, selector) {
@@ -80,7 +79,6 @@ const retrieve = async (key) => {
   return result[key];
 }
 
-
 async function enhanceQuery() {
     const crawl = await retrieve('google');
     if (!crawl) {
@@ -96,7 +94,7 @@ async function enhanceQuery() {
     console.log("Results", results);
     const parameters = encodeParametersFromResultArray(q, results);
     console.log("Parameters", parameters.toString());
-    const url = 'http://localhost:8000/app/home?' + parameters.toString();
+    const url = QUERY_URL + parameters.toString();
 
     // Add a header for the HX-Current-URL header
     const headers = new Headers();
@@ -113,7 +111,7 @@ async function enhanceQuery() {
 }
 
 enhanceQuery().then(() => {
-    console.log("Enhanced query");
+    console.log("Enhanced query finished");
 }).catch(error => {
     console.log("Error", error);
 })
