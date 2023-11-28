@@ -1,14 +1,20 @@
 {
   "name": "__MSG_manifest_name__",
-  "version": "0.4.7",
+  "version": "0.5",
   "manifest_version": 2,
   "short_name": "__MSG_manifest_shortName__",
   "default_locale": "en",
   "description": "__MSG_manifest_description__",
   "background": {
-    "scripts": ["./assets/background.js"],
+    "scripts": ["./assets/background.js", "./assets/worker.js"],
     "persistent": true
   },
+  "content_scripts": [
+    {
+      "matches": ["https://*.mwmbl.org/?q=*", "http://localhost/?q=*"],
+      "js": ["./assets/content.js"]
+    }
+  ],
   "permissions": ["storage", "management", "https://*/", "http://*/"],
   "icons": {
     "16": "./mwmbl16.png",
