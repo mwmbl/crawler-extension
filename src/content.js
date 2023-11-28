@@ -112,6 +112,7 @@ async function enhanceQuery() {
 
 enhanceQuery().then(() => {
     console.log("Enhanced query finished");
+    window.postMessage('results-loaded', "*");
 }).catch(error => {
     console.log("Error", error);
-})
+});
