@@ -24,7 +24,7 @@ function run() {
   // Create the worker if it's null
     if (!worker) {
         console.log("Starting worker");
-        worker = new Worker('worker.js');
+        worker = new Worker('worker.js', {type: 'module'});
     }
     worker.postMessage({type: 'start'});
 }

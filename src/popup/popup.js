@@ -1,18 +1,8 @@
+import {retrieve, store} from "~/storage";
+
 let value = 0;
 
 const logListElement = document.querySelector('.log-list');
-
-const retrieve = async (key) => {
-  const promise = new Promise(resolve => {
-    chrome.storage.local.get([key], resolve);
-  });
-  const result = await promise;
-  return result[key];
-}
-
-const store = async (key, value) => {
-  await chrome.storage.local.set({[key]: value});
-}
 
 // TODO: create different types of elements based on the result
 
@@ -85,14 +75,7 @@ function getToggleHandler(toggle, key) {
 function initializeToggle(element, key, defaultValue) {
   // If there is nothing in storage, default to true
   retrieve(key).then(value => {
-    if (value === undefined) {
-      value = defaultValue;
-      store(key, value).then(() => {
-        element.checked = value;
-      });
-    } else {
-      element.checked = value;
-    }
+    element.checked = value;
 
     // Wait 100 milliseconds then enable the animation
     setTimeout(() => {
