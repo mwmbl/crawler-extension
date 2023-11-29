@@ -22,7 +22,7 @@ export default defineConfig(({ command }) => ({
   },
   build: {
     outDir: r('dist'),
-    emptyOutDir: true,
+    emptyOutDir: false,
     minify: false,
     sourcemap: isDev ? 'inline' : false,
     // https://developer.chrome.com/docs/webstore/program_policies/#:~:text=Code%20Readability%20Requirements
@@ -31,12 +31,11 @@ export default defineConfig(({ command }) => ({
     },
     rollupOptions: {
       input: {
-        background: r('src/background.js'),
-        content: r('src/content.js'),
-        popup: r('src/popup/index.html')
+        worker: r('src/worker.js'),
       },
       output: {
         entryFileNames: 'assets/[name].js',
+        inlineDynamicImports: true
       }
     },
   },

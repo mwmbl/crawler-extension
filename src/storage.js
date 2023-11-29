@@ -16,6 +16,8 @@ export const retrieve = async (key) => {
 
   return result[key];
 }
+
+
 export const store = async (key, value) => {
   await chrome.storage.local.set({[key]: value});
 }

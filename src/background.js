@@ -23,8 +23,8 @@ let worker = null;
 function run() {
   // Create the worker if it's null
     if (!worker) {
-        console.log("Starting worker");
-        worker = new Worker('worker.js', {type: 'module'});
+      console.log("Starting worker");
+      worker = new Worker('worker.js');
     }
     worker.postMessage({type: 'start'});
 }

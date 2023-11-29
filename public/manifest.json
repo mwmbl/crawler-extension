@@ -1,14 +1,13 @@
 {
   "name": "__MSG_manifest_name__",
-  "version": "0.5",
+  "version": "0.5.1",
   "manifest_version": 2,
   "short_name": "__MSG_manifest_shortName__",
   "default_locale": "en",
   "description": "__MSG_manifest_description__",
   "background": {
     "scripts": ["./assets/background.js", "./assets/worker.js"],
-    "persistent": true,
-    "type": "module"
+    "persistent": true
   },
   "content_scripts": [
     {
