@@ -1,5 +1,6 @@
 import {canVisit, parser} from "./robots";
 import {getParagraphs} from "./justext";
+import {retrieve, store} from "./storage";
 
 
 const DOMAIN = 'https://api.mwmbl.org/'
@@ -110,14 +111,14 @@ class Crawler {
     const data = await response.json();
     this.curatedDomains = new Set(Object.keys(data));
 
-    this.links = await this.retrieve('links');
+    this.links = await retrieve('links');
     if (!this.links) {
       await this.seedLinks();
     }
 
-    this.batches = await this.retrieve('batches') || [];
-    this.results = await this.retrieve('results') || [];
-    this.visited = new Set(await this.retrieve('visited') || []);
+    this.batches = await retrieve('batches') || [];
+    this.results = await retrieve('results') || [];
+    this.visited = new Set(await retrieve('visited') || []);
   }
 
   async seedLinks() {
@@ -126,27 +127,14 @@ class Crawler {
       const link = 'https://' + chooseRandom([...this.curatedDomains]);
       this.links[link] = 'curated';
     }
-    await this.store('links', this.links);
-  }
-
-  async retrieve(key) {
-    // const result = await chrome.storage.local.get([key]);
-    const promise = new Promise(resolve => {
-      chrome.storage.local.get([key], resolve);
-    });
-    const result = await promise;
-    return result[key];
-  }
-
-  async store(key, value) {
-    await chrome.storage.local.set({[key]: value});
+    await store('links', this.links);
   }
 
   async setUp() {
     await this.initialize();
     while (true) {
       try {
-        const crawl = await this.retrieve("crawl");
+        const crawl = await retrieve("crawl");
         if (crawl) {
           await this.runCrawlIteration();
         } else {
@@ -178,7 +166,7 @@ class Crawler {
 
     const batchItems = [];
     for (let i=0; i<urlsToCrawl.length; ++i) {
-      const crawl = await this.retrieve("crawl");
+      const crawl = await retrieve("crawl");
       if (!crawl) {
         break;
       }
@@ -186,7 +174,7 @@ class Crawler {
       const item = await this.crawlURL(urlsToCrawl[i], 'api');
       batchItems.push(item);
 
-      await this.store('batch', batchItems);
+      await store('batch', batchItems);
 
       chrome.runtime.sendMessage({
         type: 'finish-crawl-url',
@@ -327,10 +315,10 @@ class Crawler {
   }
 
   async getUserId() {
-    let userId = await this.retrieve('user_id');
+    let userId = await retrieve('user_id');
     if (!userId) {
       userId = crypto.randomUUID();
-      await this.store('user_id', userId);
+      await store('user_id', userId);
     }
     return userId;
   }
