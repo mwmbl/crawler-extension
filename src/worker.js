@@ -76,7 +76,8 @@ async function safeFetch(url) {
   const options = {
     status: result.status,
     statusText: result.statusText,
-    headers: result.headers
+    headers: result.headers,
+    url: result.url,
   }
   return new Response(stream, options);
 }
@@ -226,6 +227,7 @@ class Crawler {
     if (!responseText) {
       return {
         'url': url,
+        'resolved_url': response.url,
         'status': response.status,
         'timestamp': Date.now(),
         'content': null,
@@ -261,31 +263,41 @@ class Crawler {
 
     return {
       'url': url,
+      'resolved_url': response.url,
       'status': response.status,
       'timestamp': Date.now(),
       'content': {
         'title': title,
         'extract': extract,
-        'links': [...links.newLinks],
-        'extra_links': [...links.extraLinks]
+        'links': this.prepareLinksResponse(links.newLinks),
+        'extra_links': this.prepareLinksResponse(links.extraLinks)
       },
       'error': null
     }
   }
 
+  prepareLinksResponse(links) {
+    const response = [];
+    for (const [url, anchorText] of links.entries()) {
+      response.push({
+        'url': url,
+        'anchor_text': anchorText.trim()
+      });
+    }
+    return response;
+  }
+
   getNewLinks(goodParagraphs) {
-    const newLinks = new Set();
-    const extraLinks = new Set();
+    const newLinks = new Map();
+    const extraLinks = new Map();
     for (let i=0; i<goodParagraphs.length; ++i) {
       const p = goodParagraphs[i];
-      if (p.links.length > 0) {
-        for (let j=0; j<p.links.length; ++j) {
-          const link = p.links[j];
-          if (link.startsWith('http') && link.length <= MAX_URL_LENGTH) {
-            if (link.search(BAD_URL_REGEX) >= 0) {
-              // console.log("Found bad URL", link);
-              continue;
-            }
+      for (const [link, anchorText] of p.links.entries()) {
+        if (link.startsWith('http') && link.length <= MAX_URL_LENGTH) {
+          if (link.search(BAD_URL_REGEX) >= 0) {
+            // console.log("Found bad URL", link);
+            continue;
+          }
 
             let linkUrl;
             try {
@@ -304,9 +316,8 @@ class Crawler {
               // We can't parse this one, just skip
             }
 
-            if (newLinks.size >= MAX_NEW_LINKS && extraLinks.size >= MAX_EXTRA_LINKS) {
-              return {newLinks, extraLinks};
-            }
+          if (newLinks.size >= MAX_NEW_LINKS && extraLinks.size >= MAX_EXTRA_LINKS) {
+            return {newLinks, extraLinks};
           }
         }
       }
