@@ -3,13 +3,12 @@ import {getParagraphs} from "./justext";
 import {retrieve, store} from "./storage";
 
 
-const DOMAIN = 'https://api.mwmbl.org/'
-const CRAWLER_ONLINE_URL = DOMAIN + 'crawler/';
-const POST_BATCH_URL = DOMAIN + 'crawler/batches/';
-const POST_NEW_BATCH_URL = DOMAIN + 'crawler/batches/new';
+const DOMAIN = 'https://mwmbl.org'
+const CRAWLER_ONLINE_URL = DOMAIN + '/api/v1/crawler/';
+const POST_BATCH_URL = DOMAIN + '/api/v1/crawler/batches/';
+const POST_NEW_BATCH_URL = DOMAIN + '/api/v1/crawler/batches/new';
 const NUM_SEED_DOMAINS = 100;
-const MAX_NEW_LINKS = 50;
-const MAX_EXTRA_LINKS = 50;
+const MAX_LINKS = 500;
 const TIMEOUT_MS = 3000;
 
 const MAX_URL_LENGTH = 150;
@@ -269,27 +268,15 @@ class Crawler {
       'content': {
         'title': title,
         'extract': extract,
-        'links': this.prepareLinksResponse(links.newLinks),
-        'extra_links': this.prepareLinksResponse(links.extraLinks)
+        'link_details': links
       },
       'error': null
     }
   }
 
-  prepareLinksResponse(links) {
-    const response = [];
-    for (const [url, anchorText] of links.entries()) {
-      response.push({
-        'url': url,
-        'anchor_text': anchorText.trim()
-      });
-    }
-    return response;
-  }
-
   getNewLinks(goodParagraphs) {
-    const newLinks = new Map();
-    const extraLinks = new Map();
+    const seenLinks = new Set();
+    const links = [];
     for (let i=0; i<goodParagraphs.length; ++i) {
       const p = goodParagraphs[i];
       for (const [link, anchorText] of p.links.entries()) {
@@ -299,30 +286,27 @@ class Crawler {
             continue;
           }
 
-            let linkUrl;
-            try {
-              linkUrl = new URL(link);
-              linkUrl.hash = '';
-              if (p.classType === 'good') {
-                if (newLinks.size < MAX_NEW_LINKS) {
-                  newLinks.add(linkUrl.href);
-                }
-              } else {
-                if (extraLinks.size < MAX_EXTRA_LINKS && !newLinks.has(linkUrl.href)) {
-                  extraLinks.add(linkUrl.href);
-                }
-              }
-            } catch(e) {
-              // We can't parse this one, just skip
+          let linkUrl;
+          try {
+            linkUrl = new URL(link);
+            linkUrl.hash = '';
+            const linkType = p.classType === 'good' ? 'content' : 'nav';
+            const url = linkUrl.href;
+            if (!seenLinks.has(url)) {
+              seenLinks.add(url);
+              links.push({"url": url, "anchor_text": anchorText, "link_type": linkType});
             }
+          } catch(e) {
+            // We can't parse this one, just skip
+          }
 
-          if (newLinks.size >= MAX_NEW_LINKS && extraLinks.size >= MAX_EXTRA_LINKS) {
-            return {newLinks, extraLinks};
+          if (links.length >= MAX_LINKS) {
+            return links;
           }
         }
       }
     }
-    return {newLinks, extraLinks};
+    return links;
   }
 
   async getUserId() {
