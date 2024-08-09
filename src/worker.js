@@ -164,9 +164,9 @@ class Crawler {
     const urlsToCrawl = await response.json();
     // console.log("Got new batch of URLs to crawl", urlsToCrawl);
 
-    // If there are no URLs then sleep for 10 seconds
+    // If there are no URLs then sleep for 1 minute
     if (urlsToCrawl.length === 0) {
-      await new Promise(resolve => setTimeout(resolve, 10000));
+      await new Promise(resolve => setTimeout(resolve, 60000));
       return;
     }
 
