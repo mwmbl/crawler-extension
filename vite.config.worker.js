@@ -35,7 +35,7 @@ export default defineConfig(({ command }) => ({
       },
       output: {
         entryFileNames: 'assets/[name].js',
-        inlineDynamicImports: true
+        inlineDynamicImports: false
       }
     },
   },

@@ -3,13 +3,12 @@ import {getParagraphs} from "./justext";
 import {retrieve, store} from "./storage";
 
 
-const DOMAIN = 'https://api.mwmbl.org/'
-const CRAWLER_ONLINE_URL = DOMAIN + 'crawler/';
-const POST_BATCH_URL = DOMAIN + 'crawler/batches/';
-const POST_NEW_BATCH_URL = DOMAIN + 'crawler/batches/new';
+const DOMAIN = 'https://mwmbl.org'
+const CRAWLER_ONLINE_URL = DOMAIN + '/api/v1/crawler/';
+const POST_BATCH_URL = DOMAIN + '/api/v1/crawler/batches/';
+const POST_NEW_BATCH_URL = DOMAIN + '/api/v1/crawler/batches/new';
 const NUM_SEED_DOMAINS = 100;
-const MAX_NEW_LINKS = 50;
-const MAX_EXTRA_LINKS = 50;
+const MAX_LINKS = 500;
 const TIMEOUT_MS = 3000;
 
 const MAX_URL_LENGTH = 150;
@@ -76,7 +75,8 @@ async function safeFetch(url) {
   const options = {
     status: result.status,
     statusText: result.statusText,
-    headers: result.headers
+    headers: result.headers,
+    url: result.url,
   }
   return new Response(stream, options);
 }
@@ -164,6 +164,12 @@ class Crawler {
     const urlsToCrawl = await response.json();
     // console.log("Got new batch of URLs to crawl", urlsToCrawl);
 
+    // If there are no URLs then sleep for 10 seconds
+    if (urlsToCrawl.length === 0) {
+      await new Promise(resolve => setTimeout(resolve, 10000));
+      return;
+    }
+
     const batchItems = [];
     for (let i=0; i<urlsToCrawl.length; ++i) {
       const crawl = await retrieve("crawl");
@@ -226,6 +232,7 @@ class Crawler {
     if (!responseText) {
       return {
         'url': url,
+        'resolved_url': response.url,
         'status': response.status,
         'timestamp': Date.now(),
         'content': null,
@@ -261,57 +268,51 @@ class Crawler {
 
     return {
       'url': url,
+      'resolved_url': response.url,
       'status': response.status,
       'timestamp': Date.now(),
       'content': {
         'title': title,
         'extract': extract,
-        'links': [...links.newLinks],
-        'extra_links': [...links.extraLinks]
+        'link_details': links
       },
       'error': null
     }
   }
 
   getNewLinks(goodParagraphs) {
-    const newLinks = new Set();
-    const extraLinks = new Set();
+    const seenLinks = new Set();
+    const links = [];
     for (let i=0; i<goodParagraphs.length; ++i) {
       const p = goodParagraphs[i];
-      if (p.links.length > 0) {
-        for (let j=0; j<p.links.length; ++j) {
-          const link = p.links[j];
-          if (link.startsWith('http') && link.length <= MAX_URL_LENGTH) {
-            if (link.search(BAD_URL_REGEX) >= 0) {
-              // console.log("Found bad URL", link);
-              continue;
-            }
+      for (const [link, anchorText] of p.links.entries()) {
+        if (link.startsWith('http') && link.length <= MAX_URL_LENGTH) {
+          if (link.search(BAD_URL_REGEX) >= 0) {
+            // console.log("Found bad URL", link);
+            continue;
+          }
 
-            let linkUrl;
-            try {
-              linkUrl = new URL(link);
-              linkUrl.hash = '';
-              if (p.classType === 'good') {
-                if (newLinks.size < MAX_NEW_LINKS) {
-                  newLinks.add(linkUrl.href);
-                }
-              } else {
-                if (extraLinks.size < MAX_EXTRA_LINKS && !newLinks.has(linkUrl.href)) {
-                  extraLinks.add(linkUrl.href);
-                }
-              }
-            } catch(e) {
-              // We can't parse this one, just skip
+          let linkUrl;
+          try {
+            linkUrl = new URL(link);
+            linkUrl.hash = '';
+            const linkType = p.classType === 'good' ? 'content' : 'nav';
+            const url = linkUrl.href;
+            if (!seenLinks.has(url)) {
+              seenLinks.add(url);
+              links.push({"url": url, "anchor_text": anchorText, "link_type": linkType});
             }
+          } catch(e) {
+            // We can't parse this one, just skip
+          }
 
-            if (newLinks.size >= MAX_NEW_LINKS && extraLinks.size >= MAX_EXTRA_LINKS) {
-              return {newLinks, extraLinks};
-            }
+          if (links.length >= MAX_LINKS) {
+            return links;
           }
         }
       }
     }
-    return {newLinks, extraLinks};
+    return links;
   }
 
   async getUserId() {

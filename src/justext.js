@@ -54,7 +54,7 @@ class Paragraph {
     this.tagsCount = 0;
     this.cfClass = null;
     this.classType = "";
-    this.links = [];
+    this.links = new Map();
     this.heading = this.domPath.some(x => HEADINGS.has(x));
   }
 
@@ -83,15 +83,15 @@ class ParagraphMaker {
     this.paragraph = null;
     this.link = false;
     this.br = false;
-    this.links = new Set();
+    this.links = new Map();
     this.startNewParagraph();
   }
 
   startNewParagraph() {
     if (this.paragraph !== null && this.paragraph.textNodes.length > 0) {
-      this.paragraph.links = [...this.links];
+      this.paragraph.links = new Map(this.links);
       this.paragraphs.push(this.paragraph);
-      this.links = new Set();
+      this.links = new Map();
       this.paragraph = new Paragraph(this.path);
     } else if (this.paragraph === null) {
       this.paragraph = new Paragraph(this.path);
@@ -154,8 +154,8 @@ class ParagraphMaker {
     this.br = false;
   }
 
-  addLink(url) {
-    this.links.add(url);
+  addLink(url, anchorText) {
+    this.links.set(url, anchorText);
   }
 }
 
@@ -165,7 +165,8 @@ const visitNodes = (node, paragraphMaker, textNodeType) => {
   const nameLower = node.tagName ? node.tagName.toLowerCase() : '';
   if (nameLower === 'a') {
     const url = node.href;
-    paragraphMaker.addLink(url);
+    const anchorText = node.textContent;
+    paragraphMaker.addLink(url, anchorText);
   }
 
   const children = [...node.childNodes];
