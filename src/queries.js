@@ -4,8 +4,8 @@
  */
 
 // Configuration
-const SEED_TERMS = new Set(['ebay', 'amazon', 'google', 'facebook', 'youtube']);
-const NUM_QUERIES = 100; // Reduced for testing
+const SEED_TERMS = new Set(['wikipedia']);
+const NUM_QUERIES = 10; // Reduced for testing
 const GOOGLE_SUGGEST_ENDPOINT = 'https://suggestqueries.google.com/complete/search';
 
 class QueryGenerator {
@@ -23,10 +23,16 @@ class QueryGenerator {
      */
     async retrieveSuggestions(query) {
         try {
-            const url = `${GOOGLE_SUGGEST_ENDPOINT}?client=chrome&q=${encodeURIComponent(query)}`;
+            const url = `${GOOGLE_SUGGEST_ENDPOINT}?client=chrome&q=${encodeURIComponent(query)}&hl=en&gl=gb`;
             
             // Note: This might face CORS issues in browser. In extension context, this should work.
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                credentials: 'omit',
+                mode: 'cors',
+                headers: {
+                    'Accept-Language': 'en-GB,en;q=0.9'
+                }
+            });
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
