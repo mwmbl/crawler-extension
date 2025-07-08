@@ -11,8 +11,8 @@ const getItemPrefix = (item) => {
   let prefix = '❌';
   if (item.status >= 200 && item.status < 300) {
     prefix = '✅';
-  } else if (item.error !== null && item.error.name === 'RobotsDenied') {
-    prefix = '🤖';
+  } else if (item.error !== null && item.error.name === 'NetworkError') {
+    prefix = '🌐';
   } else if (item.error !== null && item.error.name === 'AbortError') {
     prefix = '⏰';
   } else if (item.status === 404) {
@@ -34,12 +34,24 @@ const createLogItem = (item) => {
   const hours = time.getHours()
   const minutes = time.getMinutes();
   const seconds = time.getSeconds();
-  const linkElement = document.createElement('a');
-  linkElement.href = item.url;
-  linkElement.innerText = (item.content === null || !item.content.title) ? item.url : item.content.title;
+  
   const prefix = getItemPrefix(item);
-  logElement.textContent = `${hours}:${(minutes < 10 ? "0" : "") + minutes}:${(seconds < 10 ? "0" : "") + seconds} ${prefix} `;
-  logElement.appendChild(linkElement);
+  
+  // Handle both query items and URL items for backward compatibility
+  if (item.query) {
+    // This is a query item
+    const queryText = item.query;
+    const suggestionCount = item.suggestions ? item.suggestions.length : 0;
+    logElement.textContent = `${hours}:${(minutes < 10 ? "0" : "") + minutes}:${(seconds < 10 ? "0" : "") + seconds} ${prefix} "${queryText}" (${suggestionCount} suggestions)`;
+  } else {
+    // This is a URL item (legacy)
+    const linkElement = document.createElement('a');
+    linkElement.href = item.url;
+    linkElement.innerText = (item.content === null || !item.content.title) ? item.url : item.content.title;
+    logElement.textContent = `${hours}:${(minutes < 10 ? "0" : "") + minutes}:${(seconds < 10 ? "0" : "") + seconds} ${prefix} `;
+    logElement.appendChild(linkElement);
+  }
+  
   logListElement.prepend(logElement);
 }
 
@@ -54,14 +66,14 @@ const createLogItem = (item) => {
 })();
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // 2. A page requested user data, respond with a copy of `user`
-  if (message.type === 'finish-crawl-url') {
+  // Handle both old crawl messages and new query generation messages
+  if (message.type === 'finish-crawl-url' || message.type === 'finish-query-generation') {
     createLogItem(message.item);
   }
 });
 
 // Add a handler to the checkbox and store the preference in storage
-const crawlToggle = document.querySelector('#crawl');
+const queryToggle = document.querySelector('#crawl'); // Reusing the crawl toggle for queries
 const googleToggle = document.querySelector('#google');
 
 function getToggleHandler(toggle, key) {
@@ -86,8 +98,8 @@ function initializeToggle(element, key, defaultValue) {
 
 console.log("Initializing toggles");
 
-crawlToggle.addEventListener('change', getToggleHandler(crawlToggle, 'crawl'));
+queryToggle.addEventListener('change', getToggleHandler(queryToggle, 'generate_queries'));
 googleToggle.addEventListener('change', getToggleHandler(googleToggle, 'google'));
 
-initializeToggle(crawlToggle, 'crawl', true);
+initializeToggle(queryToggle, 'generate_queries', true);
 initializeToggle(googleToggle, 'google', false);

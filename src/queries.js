@@ -222,7 +222,9 @@ async function run() {
     }
 }
 
-// Export for use in other modules
+// Export for use in other modules (ES6 and CommonJS)
+export { QueryGenerator, run };
+
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { QueryGenerator, run };
 }
