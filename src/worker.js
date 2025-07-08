@@ -44,38 +44,33 @@ class QueryDatasetGenerator {
       const storedNumQueries = await retrieve('num_queries');
       const numQueries = storedNumQueries || 50;
       
-      // Create QueryGenerator and run createDataset
-      this.queryGenerator = new QueryGenerator(seedTerms, numQueries);
-      
-      // Override the QueryGenerator's retrieveSuggestions method to capture results
-      const originalRetrieveSuggestions = this.queryGenerator.retrieveSuggestions.bind(this.queryGenerator);
-      let queryCount = 0;
-      
-      this.queryGenerator.retrieveSuggestions = async (query) => {
-        queryCount++;
-        console.log(`Processing query ${queryCount}/${numQueries}: "${query}"`);
-        
-        const suggestions = await originalRetrieveSuggestions(query);
-        
+      // Create progress callback function
+      const progressCallback = (progressData) => {
         // Send progress update to popup with actual suggestions
         chrome.runtime.sendMessage({
           type: 'finish-query-generation',
           item: {
-            query: query,
+            query: progressData.query,
             timestamp: Date.now(),
-            status: suggestions.length > 0 ? 200 : 404,
-            suggestions: suggestions,
-            error: null
+            status: progressData.error ? null : (progressData.suggestions.length > 0 ? 200 : 404),
+            suggestions: progressData.suggestions,
+            error: progressData.error ? {
+              name: progressData.error.name,
+              message: progressData.error.message
+            } : null
           },
           progress: {
-            current: queryCount,
-            total: numQueries,
-            totalSuggestions: suggestions.length
+            current: progressData.current,
+            total: progressData.total,
+            totalSuggestions: progressData.suggestions.length,
+            totalTerms: progressData.totalTerms,
+            totalDatasetEntries: progressData.totalDatasetEntries
           }
         });
-        
-        return suggestions;
       };
+
+      // Create QueryGenerator with progress callback
+      this.queryGenerator = new QueryGenerator(seedTerms, numQueries, progressCallback);
 
       // Run the dataset creation
       const dataset = await this.queryGenerator.createDataset();

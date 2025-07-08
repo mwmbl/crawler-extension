@@ -9,13 +9,14 @@ const NUM_QUERIES = 10; // Reduced for testing
 const GOOGLE_SUGGEST_ENDPOINT = 'https://suggestqueries.google.com/complete/search';
 
 class QueryGenerator {
-    constructor(seedTerms = SEED_TERMS, numQueries = NUM_QUERIES) {
+    constructor(seedTerms = SEED_TERMS, numQueries = NUM_QUERIES, progressCallback = null) {
         this.seedTerms = new Set(seedTerms);
         this.numQueries = numQueries;
         this.dataset = [];
         this.doneQueries = new Set();
         this.terms = new Set(seedTerms);
         this.random = Math.random; // Simple random for now
+        this.progressCallback = progressCallback;
     }
 
     /**
@@ -128,11 +129,38 @@ class QueryGenerator {
 
                 console.log(`Added ${suggestions.length} suggestions. Total terms: ${this.terms.size}`);
 
+                // Call progress callback if provided
+                if (this.progressCallback) {
+                    this.progressCallback({
+                        query: query,
+                        suggestions: suggestions,
+                        current: this.doneQueries.size,
+                        total: this.numQueries,
+                        totalTerms: this.terms.size,
+                        totalDatasetEntries: this.dataset.length,
+                        sourceTerm: term
+                    });
+                }
+
                 // Small delay to be respectful to Google's servers
                 await this.delay(100);
 
             } catch (error) {
                 console.error(`Error processing query "${query}":`, error);
+                
+                // Call progress callback for errors too
+                if (this.progressCallback) {
+                    this.progressCallback({
+                        query: query,
+                        suggestions: [],
+                        current: this.doneQueries.size,
+                        total: this.numQueries,
+                        totalTerms: this.terms.size,
+                        totalDatasetEntries: this.dataset.length,
+                        sourceTerm: term,
+                        error: error
+                    });
+                }
                 break;
             }
         }
