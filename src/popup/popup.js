@@ -37,12 +37,20 @@ const createLogItem = (item) => {
   
   const prefix = getItemPrefix(item);
   
-  // Handle both query items and URL items for backward compatibility
+  // Handle different types of items
   if (item.query) {
-    // This is a query item
     const queryText = item.query;
-    const suggestionCount = item.suggestions ? item.suggestions.length : 0;
-    logElement.textContent = `${hours}:${(minutes < 10 ? "0" : "") + minutes}:${(seconds < 10 ? "0" : "") + seconds} ${prefix} "${queryText}" (${suggestionCount} suggestions)`;
+    
+    if (item.searchIndex !== undefined) {
+      // This is a search result item
+      const resultCount = item.resultCount || 0;
+      const searchIndex = item.searchIndex;
+      logElement.textContent = `${hours}:${(minutes < 10 ? "0" : "") + minutes}:${(seconds < 10 ? "0" : "") + seconds} ${prefix} Search ${searchIndex}/10: "${queryText}" (${resultCount} results)`;
+    } else {
+      // This is a query generation item
+      const suggestionCount = item.suggestions ? item.suggestions.length : 0;
+      logElement.textContent = `${hours}:${(minutes < 10 ? "0" : "") + minutes}:${(seconds < 10 ? "0" : "") + seconds} ${prefix} Query: "${queryText}" (${suggestionCount} suggestions)`;
+    }
   } else {
     // This is a URL item (legacy)
     const linkElement = document.createElement('a');
@@ -66,9 +74,14 @@ const createLogItem = (item) => {
 })();
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // Handle both old crawl messages and new query generation messages
-  if (message.type === 'finish-crawl-url' || message.type === 'finish-query-generation') {
+  // Handle various message types
+  if (message.type === 'finish-crawl-url' || 
+      message.type === 'finish-query-generation' || 
+      message.type === 'finish-search') {
     createLogItem(message.item);
+  } else if (message.type === 'crawler-progress') {
+    // Handle general crawler progress updates
+    console.log('Crawler progress:', message.progressType, message.data);
   }
 });
 

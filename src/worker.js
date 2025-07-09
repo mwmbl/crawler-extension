@@ -1,5 +1,5 @@
-import {retrieve, store} from "./storage";
-import {QueryGenerator} from "./queries.js";
+import { retrieve, store } from "./storage.js";
+import { dailyScheduler } from "./scheduler.js";
 
 onmessage = function(e) {
   console.log("Message received", e.data);
@@ -8,9 +8,8 @@ onmessage = function(e) {
   }
 }
 
-class QueryDatasetGenerator {
+class DailyCrawlerManager {
   constructor() {
-    this.queryGenerator = null;
     this.isRunning = false;
   }
 
@@ -19,80 +18,136 @@ class QueryDatasetGenerator {
       try {
         const generateQueries = await retrieve("generate_queries");
         if (generateQueries && !this.isRunning) {
-          await this.runQueryGeneration();
+          await this.startDailyScheduler();
         } else {
-          // Sleep for 5s
-          await new Promise(resolve => setTimeout(resolve, 5000));
+          // Sleep for 30s when disabled
+          await new Promise(resolve => setTimeout(resolve, 30000));
         }
       } catch (e) {
-        console.log("Exception running query generation", e);
+        console.log("Exception running daily crawler:", e);
         this.isRunning = false;
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 60000));
       }
     }
   }
 
-  async runQueryGeneration() {
+  async startDailyScheduler() {
+    if (this.isRunning) {
+      console.log("Daily scheduler is already running");
+      return;
+    }
+
     this.isRunning = true;
-    console.log("Starting query dataset generation...");
+    console.log("Starting daily crawler scheduler...");
 
     try {
-      // Get seed terms from storage or use defaults
-      const storedSeedTerms = await retrieve('seed_terms');
-      const seedTerms = storedSeedTerms || ['wikipedia', 'github', 'stackoverflow', 'reddit', 'youtube', 'amazon', 'google', 'facebook'];
-      
-      // Get number of queries from storage or use default
-      const storedNumQueries = await retrieve('num_queries');
-      const numQueries = storedNumQueries || 50;
-      
-      // Create progress callback function
-      const progressCallback = (progressData) => {
-        // Send progress update to popup with actual suggestions
-        chrome.runtime.sendMessage({
-          type: 'finish-query-generation',
-          item: {
-            query: progressData.query,
-            timestamp: Date.now(),
-            status: progressData.error ? null : (progressData.suggestions.length > 0 ? 200 : 404),
-            suggestions: progressData.suggestions,
-            error: progressData.error ? {
-              name: progressData.error.name,
-              message: progressData.error.message
-            } : null
-          },
-          progress: {
-            current: progressData.current,
-            total: progressData.total,
-            totalSuggestions: progressData.suggestions.length,
-            totalTerms: progressData.totalTerms,
-            totalDatasetEntries: progressData.totalDatasetEntries
-          }
-        });
-      };
+      // Set up progress callback for UI updates
+      dailyScheduler.setProgressCallback((progressData) => {
+        this.sendProgressUpdate(progressData);
+      });
 
-      // Create QueryGenerator with progress callback
-      this.queryGenerator = new QueryGenerator(seedTerms, numQueries, progressCallback);
-
-      // Run the dataset creation
-      const dataset = await this.queryGenerator.createDataset();
+      // Start the daily scheduler
+      await dailyScheduler.start();
       
-      // Store the final dataset
-      await store('query_dataset', dataset);
-      await store('batch', dataset.slice(-10)); // Store last 10 for popup display
-      
-      console.log(`Query generation complete! Generated ${dataset.length} total entries.`);
-
     } catch (error) {
-      console.error("Error during query generation:", error);
+      console.error("Error in daily scheduler:", error);
     } finally {
       this.isRunning = false;
     }
   }
+
+  sendProgressUpdate(progressData) {
+    try {
+      // Handle different types of progress updates
+      switch (progressData.type) {
+        case 'query-generation-progress':
+          // Send query generation progress (compatible with existing popup)
+          chrome.runtime.sendMessage({
+            type: 'finish-query-generation',
+            item: {
+              query: progressData.data.query,
+              timestamp: progressData.timestamp,
+              status: progressData.data.error ? null : (progressData.data.suggestions > 0 ? 200 : 404),
+              suggestions: new Array(progressData.data.suggestions).fill('suggestion'), // Placeholder
+              error: progressData.data.error ? {
+                name: 'QueryError',
+                message: progressData.data.error
+              } : null
+            },
+            progress: {
+              current: progressData.data.current,
+              total: progressData.data.total,
+              totalSuggestions: progressData.data.suggestions,
+              totalTerms: 0,
+              totalDatasetEntries: 0
+            }
+          });
+          break;
+
+        case 'search-complete':
+          // Send search completion update
+          chrome.runtime.sendMessage({
+            type: 'finish-search',
+            item: {
+              query: progressData.data.query,
+              timestamp: progressData.timestamp,
+              status: progressData.data.success ? 200 : 500,
+              searchIndex: progressData.data.searchIndex,
+              resultCount: progressData.data.resultCount,
+              error: progressData.data.error || null
+            }
+          });
+          break;
+
+        case 'dataset-complete':
+          // Update batch for popup display
+          this.updateBatchDisplay();
+          break;
+
+        default:
+          // Send generic progress update
+          chrome.runtime.sendMessage({
+            type: 'crawler-progress',
+            progressType: progressData.type,
+            data: progressData.data,
+            timestamp: progressData.timestamp
+          });
+      }
+    } catch (error) {
+      console.error('Error sending progress update:', error);
+    }
+  }
+
+  async updateBatchDisplay() {
+    try {
+      // Get recent search results for popup display
+      const completedSearches = await retrieve('completed_searches') || [];
+      const recentSearches = completedSearches.slice(-10).map(search => ({
+        query: search.query,
+        timestamp: search.timestamp,
+        status: search.success ? 200 : 500,
+        resultCount: search.resultCount,
+        error: search.error
+      }));
+      
+      await store('batch', recentSearches);
+    } catch (error) {
+      console.error('Error updating batch display:', error);
+    }
+  }
+
+  stop() {
+    console.log("Stopping daily crawler manager...");
+    this.isRunning = false;
+    dailyScheduler.stop();
+  }
 }
 
-let queryGenerator = null;
+let crawlerManager = null;
 function run() {
-  if (queryGenerator === null) {
-    queryGenerator = new QueryDatasetGenerator();
-    queryGenerator.setUp();
+  if (crawlerManager === null) {
+    crawlerManager = new DailyCrawlerManager();
+    crawlerManager.setUp();
   }
 }
