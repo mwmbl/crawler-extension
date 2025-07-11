@@ -64,11 +64,17 @@ const createLogItem = (item) => {
 }
 
 (async () => {
-  const batch = await retrieve('batch');
-  if (batch === undefined) {
+  // Load from event_history
+  let events = await retrieve('event_history');
+  
+  if (!events || events.length === 0) {
     return;
   }
-  batch.forEach(item => {
+  
+  // Display the most recent events (up to 20)
+  // Reverse the order so most recent items appear at the top
+  const recentEvents = events.slice(0, 20);
+  recentEvents.reverse().forEach(item => {
     createLogItem(item);
   });
 })();

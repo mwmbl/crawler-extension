@@ -57,24 +57,28 @@ class DailyCrawlerManager {
     }
   }
 
-  sendProgressUpdate(progressData) {
+  async sendProgressUpdate(progressData) {
     try {
+      let eventItem = null;
+      
       // Handle different types of progress updates
       switch (progressData.type) {
         case 'query-generation-progress':
+          eventItem = {
+            query: progressData.data.query,
+            timestamp: progressData.timestamp,
+            status: progressData.data.error ? null : (progressData.data.suggestions > 0 ? 200 : 404),
+            suggestions: new Array(progressData.data.suggestions).fill('suggestion'), // Placeholder
+            error: progressData.data.error ? {
+              name: 'QueryError',
+              message: progressData.data.error
+            } : null
+          };
+          
           // Send query generation progress (compatible with existing popup)
           chrome.runtime.sendMessage({
             type: 'finish-query-generation',
-            item: {
-              query: progressData.data.query,
-              timestamp: progressData.timestamp,
-              status: progressData.data.error ? null : (progressData.data.suggestions > 0 ? 200 : 404),
-              suggestions: new Array(progressData.data.suggestions).fill('suggestion'), // Placeholder
-              error: progressData.data.error ? {
-                name: 'QueryError',
-                message: progressData.data.error
-              } : null
-            },
+            item: eventItem,
             progress: {
               current: progressData.data.current,
               total: progressData.data.total,
@@ -86,23 +90,24 @@ class DailyCrawlerManager {
           break;
 
         case 'search-complete':
+          eventItem = {
+            query: progressData.data.query,
+            timestamp: progressData.timestamp,
+            status: progressData.data.success ? 200 : 500,
+            searchIndex: progressData.data.searchIndex,
+            resultCount: progressData.data.resultCount,
+            error: progressData.data.error || null
+          };
+          
           // Send search completion update
           chrome.runtime.sendMessage({
             type: 'finish-search',
-            item: {
-              query: progressData.data.query,
-              timestamp: progressData.timestamp,
-              status: progressData.data.success ? 200 : 500,
-              searchIndex: progressData.data.searchIndex,
-              resultCount: progressData.data.resultCount,
-              error: progressData.data.error || null
-            }
+            item: eventItem
           });
           break;
 
         case 'dataset-complete':
-          // Update batch for popup display
-          this.updateBatchDisplay();
+          // Dataset processing complete
           break;
 
         default:
@@ -114,28 +119,34 @@ class DailyCrawlerManager {
             timestamp: progressData.timestamp
           });
       }
+      
+      // Store individual events persistently for popup display
+      if (eventItem) {
+        await this.addEventToHistory(eventItem);
+      }
     } catch (error) {
       console.error('Error sending progress update:', error);
     }
   }
 
-  async updateBatchDisplay() {
+  async addEventToHistory(eventItem) {
     try {
-      // Get recent search results for popup display
-      const completedSearches = await retrieve('completed_searches') || [];
-      const recentSearches = completedSearches.slice(-10).map(search => ({
-        query: search.query,
-        timestamp: search.timestamp,
-        status: search.success ? 200 : 500,
-        resultCount: search.resultCount,
-        error: search.error
-      }));
+      // Get existing event history
+      const eventHistory = await retrieve('event_history') || [];
       
-      await store('batch', recentSearches);
+      // Add new event to the beginning of the array
+      eventHistory.unshift(eventItem);
+      
+      // Keep only the last 50 events to prevent storage bloat
+      const trimmedHistory = eventHistory.slice(0, 50);
+      
+      // Store the updated history
+      await store('event_history', trimmedHistory);
     } catch (error) {
-      console.error('Error updating batch display:', error);
+      console.error('Error adding event to history:', error);
     }
   }
+
 
   stop() {
     console.log("Stopping daily crawler manager...");
