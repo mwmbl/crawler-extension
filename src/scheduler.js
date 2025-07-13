@@ -76,7 +76,7 @@ export class DailyScheduler {
 
         try {
             // Check if extension is enabled for query generation
-            const generateQueries = await retrieve("generate_queries");
+            const generateQueries = await retrieve("generate_dataset");
             if (!generateQueries) {
                 console.log('Query generation is disabled');
                 this.isRunning = false;

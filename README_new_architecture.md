@@ -183,7 +183,7 @@ The extension uses the following Chrome storage keys:
     "unsent_data": {...},                   // Data pending transmission
     
     // Configuration (existing)
-    "generate_queries": true,               // Enable/disable extension
+    "generate_dataset": true,               // Enable/disable extension
     "seed_terms": [...],                    // Custom seed terms
     "num_queries": 50,                      // Custom query count
     
@@ -290,7 +290,7 @@ The new architecture is designed to be backward compatible:
 ### Common Issues
 
 1. **No searches happening**
-   - Check if `generate_queries` is enabled in storage
+   - Check if `generate_dataset` is enabled in storage
    - Verify daily cycle hasn't completed
    - Check console for error messages
 

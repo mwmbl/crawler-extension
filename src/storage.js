@@ -1,5 +1,5 @@
 const defaultValues = {
-  'crawl': true,
+  'generate_dataset': true,
   'google': false,
 }
 

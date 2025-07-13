@@ -16,7 +16,7 @@ class DailyCrawlerManager {
   async setUp() {
     while (true) {
       try {
-        const generateQueries = await retrieve("generate_queries");
+        const generateQueries = await retrieve("generate_dataset");
         if (generateQueries && !this.isRunning) {
           await this.startDailyScheduler();
         } else {

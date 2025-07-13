@@ -103,10 +103,10 @@ function getToggleHandler(toggle, key) {
   }
 }
 
-function initializeToggle(element, key, defaultValue) {
+function initializeToggle(element, key) {
   // If there is nothing in storage, default to true
   retrieve(key).then(value => {
-    element.checked = value;
+    element.checked = value;      
 
     // Wait 100 milliseconds then enable the animation
     setTimeout(() => {
@@ -117,8 +117,8 @@ function initializeToggle(element, key, defaultValue) {
 
 console.log("Initializing toggles");
 
-queryToggle.addEventListener('change', getToggleHandler(queryToggle, 'generate_queries'));
+queryToggle.addEventListener('change', getToggleHandler(queryToggle, 'generate_dataset'));
 googleToggle.addEventListener('change', getToggleHandler(googleToggle, 'google'));
 
-initializeToggle(queryToggle, 'generate_queries', true);
-initializeToggle(googleToggle, 'google', false);
+initializeToggle(queryToggle, 'generate_dataset');
+initializeToggle(googleToggle, 'google');
