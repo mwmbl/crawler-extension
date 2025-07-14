@@ -5,11 +5,11 @@
 
 export const CONFIG = {
     // Backend endpoint - replace with your actual backend URL when ready
-    BACKEND_ENDPOINT: 'https://your-backend-domain.com/api/crawler-data',
+    BACKEND_ENDPOINT: 'http://localhost:8000/api/v1/crawler/dataset',
     
     // Search configuration
-    SEARCHES_PER_DAY: 10,
-    SEARCH_INTERVAL_MINUTES: 10,
+    SEARCHES_PER_DAY: 2,
+    SEARCH_INTERVAL_MINUTES: 1,
     
     // Query generation configuration
     DEFAULT_SEED_TERMS: ['wikipedia', 'github', 'stackoverflow', 'reddit', 'youtube'],

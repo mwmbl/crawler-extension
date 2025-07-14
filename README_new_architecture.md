@@ -114,54 +114,36 @@ The extension sends data to the backend in the following format:
 {
     "date": "2025-01-07",
     "timestamp": 1704672000000,
-    "queryDataset": {
-        "entries": [
-            {
-                "query": "wikipedia",
-                "suggestion": "wikipedia english",
-                "source_term": "wikipedia",
-                "timestamp": 1704672000000
-            }
-            // ... more entries
-        ],
-        "totalEntries": 150,
-        "uniqueQueries": 75
-    },
-    "searchResults": {
-        "searches": [
-            {
-                "query": "wikipedia english",
-                "results": [
-                    {
-                        "title": "Wikipedia",
-                        "url": "https://en.wikipedia.org/",
-                        "extract": "Wikipedia is a free online encyclopedia...",
-                        "timestamp": 1704672000000
-                    }
-                    // ... more results
-                ],
-                "timestamp": 1704672000000,
-                "duration": 1250,
-                "success": true,
-                "resultCount": 8,
-                "searchIndex": 1
-            }
-            // ... more searches
-        ],
-        "totalSearches": 10,
-        "successfulSearches": 9,
-        "failedSearches": 1
-    },
-    "metadata": {
-        "extensionVersion": "0.6.1",
-        "generatedAt": 1704672000000,
-        "totalResultsCollected": 67
-    },
-    "transmission": {
-        "sentAt": 1704672000000,
-        "endpoint": "https://your-backend-domain.com/api/crawler-data",
-        "userAgent": "Mwmbl-Crawler-Extension/0.6.1"
-    }
+    "extensionVersion": "0.6.1",
+    "queryDataset": [
+        {
+            "query": "wikipedia",
+            "suggestion": "wikipedia english",
+            "source_term": "wikipedia",
+            "timestamp": 1704672000000
+        }
+        // ... more entries
+    ],
+    "searchResults": [
+        {
+            "query": "wikipedia english",
+            "results": [
+                {
+                    "title": "Wikipedia",
+                    "url": "https://en.wikipedia.org/",
+                    "extract": "Wikipedia is a free online encyclopedia...",
+                    "timestamp": 1704672000000
+                }
+                // ... more results
+            ],
+            "timestamp": 1704672000000,
+            "duration": 1250,
+            "success": true,
+            "resultCount": 8,
+            "searchIndex": 1
+        }
+        // ... more searches
+    ]
 }
 ```
 

@@ -175,25 +175,15 @@ export async function packageDataForBackend() {
     const completedSearches = await retrieve('completed_searches') || [];
     const searchCount = await getSearchCount();
     
+    // Get version dynamically from manifest
+    const extensionVersion = browser.runtime.getManifest().version;
+    
     const packagedData = {
         date: currentDate,
         timestamp: Date.now(),
-        queryDataset: {
-            entries: dailyQueryDataset,
-            totalEntries: dailyQueryDataset.length,
-            uniqueQueries: [...new Set(dailyQueryDataset.map(item => item.suggestion))].length
-        },
-        searchResults: {
-            searches: completedSearches,
-            totalSearches: searchCount,
-            successfulSearches: completedSearches.filter(s => s.success).length,
-            failedSearches: completedSearches.filter(s => !s.success).length
-        },
-        metadata: {
-            extensionVersion: "0.6.1", // From manifest
-            generatedAt: Date.now(),
-            totalResultsCollected: completedSearches.reduce((sum, search) => sum + search.resultCount, 0)
-        }
+        extensionVersion: extensionVersion,
+        queryDataset:  dailyQueryDataset,
+        searchResults:  completedSearches,
     };
     
     console.log(`Packaged data for backend: ${searchCount} searches, ${dailyQueryDataset.length} dataset entries`);

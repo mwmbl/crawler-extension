@@ -28,11 +28,6 @@ export async function sendDataToBackend(data, maxRetries = BACKEND_CONFIG.maxRet
             
             const response = await fetch(BACKEND_CONFIG.endpoint, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'User-Agent': 'Mwmbl-Crawler-Extension/0.6.1'
-                },
                 body: JSON.stringify(data),
                 signal: AbortSignal.timeout(BACKEND_CONFIG.timeout)
             });
@@ -157,26 +152,16 @@ export function setBackendEndpoint(newEndpoint) {
  */
 export async function transmitCrawlerData(data) {
     const startTime = Date.now();
-    
-    // Add transmission metadata
-    const enhancedData = {
-        ...data,
-        transmission: {
-            sentAt: startTime,
-            endpoint: BACKEND_CONFIG.endpoint,
-            userAgent: 'Mwmbl-Crawler-Extension/0.6.1'
-        }
-    };
-    
+        
     try {
-        const result = await sendDataToBackend(enhancedData);
+        const result = await sendDataToBackend(data);
         const endTime = Date.now();
         
         return {
             ...result,
             duration: endTime - startTime,
-            dataSize: JSON.stringify(enhancedData).length,
-            compressionRatio: JSON.stringify(enhancedData).length / JSON.stringify(data).length
+            dataSize: JSON.stringify(data).length,
+            compressionRatio: JSON.stringify(data).length / JSON.stringify(data).length
         };
         
     } catch (error) {
