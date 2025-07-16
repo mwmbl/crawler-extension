@@ -1,4 +1,5 @@
 import { fetchGoogleResults } from './google-search.js';
+import { retrieve } from './storage.js';
 
 const QUERY_URL = 'https://mwmbl.org/app/home?';
 
@@ -13,15 +14,6 @@ function encodeParametersFromResultArray(q, results) {
         params.append('extract', result.extract);
     }
     return params;
-}
-
-
-const retrieve = async (key) => {
-  const promise = new Promise(resolve => {
-    chrome.storage.local.get([key], resolve);
-  });
-  const result = await promise;
-  return result[key];
 }
 
 async function enhanceQuery() {

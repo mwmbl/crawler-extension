@@ -9,22 +9,6 @@ const NUM_QUERIES = 10; // Reduced for testing
 const GOOGLE_SUGGEST_ENDPOINT = 'https://suggestqueries.google.com/complete/search';
 
 /**
- * Add suggestion words to terms set for future queries
- * @param {Array} suggestions - Array of suggestion strings
- * @param {Set} terms - Set to add words to
- */
-export function addSuggestionWordsToTerms(suggestions, terms) {
-    for (const suggestion of suggestions) {
-        const words = suggestion.toLowerCase().split(/\s+/);
-        for (const word of words) {
-            if (word.length > 1) { // Skip single characters
-                terms.add(word);
-            }
-        }
-    }
-}
-
-/**
  * Extract random sample of terms from dataset suggestions
  * @param {Array} dataset - Dataset with suggestion entries
  * @param {number} sampleSize - Number of terms to sample (default 50)
@@ -42,9 +26,16 @@ export function extractSeedTermsFromDataset(dataset, sampleSize = 50) {
         return [];
     }
 
-    // Use the same logic as addSuggestionWordsToTerms
+    // Extract words from suggestions
     const terms = new Set();
-    addSuggestionWordsToTerms(allSuggestions, terms);
+    for (const suggestion of allSuggestions) {
+        const words = suggestion.toLowerCase().split(/\s+/);
+        for (const word of words) {
+            if (word.length > 1) {
+                terms.add(word);
+            }
+        }
+    }
 
     // Convert to array and shuffle
     const wordsArray = Array.from(terms);
@@ -173,7 +164,14 @@ class QueryGenerator {
                 this.doneQueries.add(query);
 
                 // Add suggestion words to terms for future queries
-                addSuggestionWordsToTerms(suggestions, this.terms);
+                for (const suggestion of suggestions) {
+                    const words = suggestion.toLowerCase().split(/\s+/);
+                    for (const word of words) {
+                        if (word.length > 1) {
+                            this.terms.add(word);
+                        }
+                    }
+                }
 
                 console.log(`Added ${suggestions.length} suggestions. Total terms: ${this.terms.size}`);
 
@@ -269,48 +267,9 @@ class QueryGenerator {
     }
 }
 
-/**
- * Main function to run the query generation
- */
-async function run() {
-    console.log('Starting Google Autocomplete Query Generator...');
-    
-    const generator = new QueryGenerator();
-    
-    try {
-        const dataset = await generator.createDataset();
-        
-        // Show statistics
-        const stats = generator.getStats();
-        console.log('\n=== Final Statistics ===');
-        console.log(`Total dataset entries: ${stats.totalEntries}`);
-        console.log(`Unique queries: ${stats.uniqueQueries}`);
-        console.log(`Unique suggestions: ${stats.uniqueSuggestions}`);
-        console.log(`Total terms collected: ${stats.totalTerms}`);
-        
-        // Save the dataset
-        generator.saveDataset();
-        
-        return dataset;
-        
-    } catch (error) {
-        console.error('Error running query generator:', error);
-    }
-}
-
 // Export for use in other modules (ES6 and CommonJS)
-export { QueryGenerator, run };
+export { QueryGenerator };
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { QueryGenerator, run, addSuggestionWordsToTerms, extractSeedTermsFromDataset };
-}
-
-// Auto-run if this is the main script
-if (typeof window !== 'undefined' && window.location) {
-    // Browser environment - don't auto-run, let user trigger it
-    window.QueryGenerator = QueryGenerator;
-    window.runQueryGenerator = run;
-} else if (typeof require !== 'undefined' && require.main === module) {
-    // Node.js environment - auto-run
-    run();
+    module.exports = { QueryGenerator, extractSeedTermsFromDataset };
 }

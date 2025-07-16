@@ -1,7 +1,5 @@
 import {retrieve, store} from "~/storage";
 
-let value = 0;
-
 const logListElement = document.querySelector('.log-list');
 
 // TODO: create different types of elements based on the result

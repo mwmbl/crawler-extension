@@ -6,21 +6,7 @@
 
 import { CONFIG } from "./config.js";
 
-// Generate random arc_id similar to SearXNG implementation
-function generateArcId(start = 0) {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-';
-    let result = '';
-    for (let i = 0; i < 23; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return `arc_id:srp_${result}_1${start.toString().padStart(2, '0')}`;
-}
 
-// Generate UI async parameters like SearXNG
-function generateUIAsync(start = 0) {
-    const arcId = generateArcId(start);
-    return `${arcId},use_ac:true,_fmt:prog`;
-}
 
 // Detect if Google is showing CAPTCHA or sorry page
 function detectGoogleSorry(response, text) {
@@ -157,7 +143,6 @@ export async function fetchGoogleResults(query, start = 0) {
         start: start.toString(),
         filter: '0',           // No filtering
         asearch: 'arc',        // Use arc search
-        async: generateUIAsync(start)  // SearXNG async format
     });
     
     const url = `https://www.google.com/search?${params.toString()}`;
