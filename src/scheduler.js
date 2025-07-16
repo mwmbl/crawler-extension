@@ -369,11 +369,11 @@ export class DailyScheduler {
      * Wait for the next day
      */
     async waitForNextDay() {
-        // Check every hour if it's a new day
-        const oneHour = 60 * 60 * 1000;
+        // Check every ten minutes if it's a new day
+        const tenMinutes = 10 * 60 * 1000;
         
         while (this.isRunning && !(await isNewDay())) {
-            await this.delay(oneHour);
+            await this.delay(tenMinutes);
         }
     }
 
