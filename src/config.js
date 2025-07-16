@@ -5,7 +5,7 @@
 
 export const CONFIG = {
     // Backend endpoint - replace with your actual backend URL when ready
-    BACKEND_ENDPOINT: 'http://localhost:8000/api/v1/crawler/dataset',
+    BACKEND_ENDPOINT: 'https://api.mwmbl.org/api/v1/crawler/dataset',
     
     // Search configuration
     SEARCHES_PER_DAY: 2,

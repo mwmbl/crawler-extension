@@ -3,7 +3,7 @@
  * Handles query datasets, search results, and data packaging for backend transmission
  */
 
-import { retrieve, store } from "./storage.js";
+import { retrieve, store, getUserId } from "./storage.js";
 import { CONFIG } from "./config.js";
 
 /**
@@ -174,11 +174,13 @@ export async function packageDataForBackend() {
     const dailyQueryDataset = await getDailyQueryDataset();
     const completedSearches = await retrieve('completed_searches') || [];
     const searchCount = await getSearchCount();
+    const userId = await getUserId();
     
     // Get version dynamically from manifest
     const extensionVersion = browser.runtime.getManifest().version;
     
     const packagedData = {
+        user_id: userId,
         date: currentDate,
         timestamp: Date.now(),
         extensionVersion: extensionVersion,
@@ -186,7 +188,7 @@ export async function packageDataForBackend() {
         searchResults:  completedSearches,
     };
     
-    console.log(`Packaged data for backend: ${searchCount} searches, ${dailyQueryDataset.length} dataset entries`);
+    console.log(`Packaged data for backend: ${searchCount} searches, ${dailyQueryDataset.length} dataset entries, user_id: ${userId}`);
     return packagedData;
 }
 

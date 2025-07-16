@@ -23,10 +23,7 @@ import {
     clearUnsentData,
     getStatusSummary
 } from "./data-manager.js";
-import { 
-    transmitCrawlerData, 
-    validateDataForTransmission 
-} from "./backend.js";
+import { transmitCrawlerData} from "./backend.js";
 import { retrieve, store } from "./storage.js";
 import { CONFIG } from "./config.js";
 
@@ -327,21 +324,6 @@ export class DailyScheduler {
             // Package data for backend
             const packagedData = await packageDataForBackend();
             
-            // Validate data
-            const validation = validateDataForTransmission(packagedData);
-            if (!validation.valid) {
-                console.error('Data validation failed:', validation.errors);
-                this.sendProgressUpdate('validation-failed', {
-                    message: 'Data validation failed',
-                    errors: validation.errors
-                });
-                return;
-            }
-
-            if (validation.warnings.length > 0) {
-                console.warn('Data validation warnings:', validation.warnings);
-            }
-
             // Send to backend
             this.sendProgressUpdate('sending-backend', {
                 message: 'Sending data to backend...'

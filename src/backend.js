@@ -80,70 +80,6 @@ export async function sendDataToBackend(data, maxRetries = BACKEND_CONFIG.maxRet
     };
 }
 
-/**
- * Test backend connectivity
- * @returns {Promise<Object>} Test result with connectivity status
- */
-export async function testBackendConnectivity() {
-    try {
-        console.log('Testing backend connectivity...');
-        
-        const testData = {
-            test: true,
-            timestamp: Date.now(),
-            message: 'Connectivity test from Mwmbl Crawler Extension'
-        };
-        
-        const response = await fetch(BACKEND_CONFIG.endpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'User-Agent': 'Mwmbl-Crawler-Extension/0.6.1'
-            },
-            body: JSON.stringify(testData),
-            signal: AbortSignal.timeout(10000) // Shorter timeout for test
-        });
-        
-        const isConnected = response.ok;
-        
-        return {
-            connected: isConnected,
-            status: response.status,
-            statusText: response.statusText,
-            timestamp: Date.now()
-        };
-        
-    } catch (error) {
-        console.warn('Backend connectivity test failed:', error.message);
-        
-        return {
-            connected: false,
-            error: {
-                name: error.name,
-                message: error.message
-            },
-            timestamp: Date.now()
-        };
-    }
-}
-
-/**
- * Get backend configuration
- * @returns {Object} Current backend configuration
- */
-export function getBackendConfig() {
-    return { ...BACKEND_CONFIG };
-}
-
-/**
- * Update backend endpoint (useful for development/testing)
- * @param {string} newEndpoint - New backend endpoint URL
- */
-export function setBackendEndpoint(newEndpoint) {
-    BACKEND_CONFIG.endpoint = newEndpoint;
-    console.log(`Backend endpoint updated to: ${newEndpoint}`);
-}
 
 /**
  * Send data with additional metadata and error handling
@@ -177,48 +113,4 @@ export async function transmitCrawlerData(data) {
             timestamp: endTime
         };
     }
-}
-
-/**
- * Validate data before transmission
- * @param {Object} data - Data to validate
- * @returns {Object} Validation result
- */
-export function validateDataForTransmission(data) {
-    const errors = [];
-    const warnings = [];
-    
-    // Check required fields
-    if (!data.date) errors.push('Missing date field');
-    if (!data.timestamp) errors.push('Missing timestamp field');
-    if (!data.queryDataset) errors.push('Missing queryDataset field');
-    if (!data.searchResults) errors.push('Missing searchResults field');
-    if (!data.metadata) errors.push('Missing metadata field');
-    
-    // Check data quality
-    if (data.queryDataset && data.queryDataset.totalEntries === 0) {
-        warnings.push('Query dataset is empty');
-    }
-    
-    if (data.searchResults && data.searchResults.totalSearches === 0) {
-        warnings.push('No search results to transmit');
-    }
-    
-    if (data.searchResults && data.searchResults.failedSearches > data.searchResults.successfulSearches) {
-        warnings.push('More failed searches than successful ones');
-    }
-    
-    // Check data size (warn if too large)
-    const dataSize = JSON.stringify(data).length;
-    if (dataSize > 1024 * 1024) { // 1MB
-        warnings.push(`Data size is large: ${Math.round(dataSize / 1024)}KB`);
-    }
-    
-    return {
-        valid: errors.length === 0,
-        errors,
-        warnings,
-        dataSize,
-        timestamp: Date.now()
-    };
 }
