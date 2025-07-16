@@ -3,7 +3,7 @@
  * Manages daily cycles, timing, and orchestrates the crawler workflow
  */
 
-import { QueryGenerator } from "./queries.js";
+import { QueryGenerator, extractSeedTermsFromDataset } from "./queries.js";
 import { performGoogleSearch } from "./google-search.js";
 import { 
     isNewDay, 
@@ -224,6 +224,9 @@ export class DailyScheduler {
             // Store the dataset
             await storeDailyQueryDataset(dataset);
 
+            // Extract random sample of 50 terms from the generated dataset for next day's seed terms
+            await this.updateSeedTermsFromDataset(dataset);
+
             console.log(`Daily query dataset generated: ${dataset.length} entries`);
             this.sendProgressUpdate('dataset-complete', {
                 message: `Daily query dataset generated with ${dataset.length} entries`,
@@ -379,6 +382,38 @@ export class DailyScheduler {
      */
     async getStatus() {
         return await getStatusSummary();
+    }
+
+    /**
+     * Extract random sample of terms from dataset to use as seed terms for next day
+     */
+    async updateSeedTermsFromDataset(dataset) {
+        try {
+            const newSeedTerms = extractSeedTermsFromDataset(dataset, 50);
+            
+            if (newSeedTerms.length === 0) {
+                console.log('No seed terms could be extracted from dataset');
+                return;
+            }
+
+            // Store the new seed terms for next day
+            await store('seed_terms', newSeedTerms);
+
+            console.log(`Updated seed terms with ${newSeedTerms.length} terms extracted from dataset`);
+            console.log('New seed terms sample:', newSeedTerms.slice(0, 10)); // Log first 10 for debugging
+
+            this.sendProgressUpdate('seed-terms-updated', {
+                message: `Updated seed terms with ${newSeedTerms.length} terms from dataset`,
+                sampleSize: newSeedTerms.length
+            });
+
+        } catch (error) {
+            console.error('Error updating seed terms from dataset:', error);
+            this.sendProgressUpdate('seed-terms-error', {
+                message: 'Error updating seed terms from dataset',
+                error: error.message
+            });
+        }
     }
 
     /**

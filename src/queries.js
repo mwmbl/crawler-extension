@@ -8,6 +8,61 @@ const SEED_TERMS = new Set(['wikipedia']);
 const NUM_QUERIES = 10; // Reduced for testing
 const GOOGLE_SUGGEST_ENDPOINT = 'https://suggestqueries.google.com/complete/search';
 
+/**
+ * Add suggestion words to terms set for future queries
+ * @param {Array} suggestions - Array of suggestion strings
+ * @param {Set} terms - Set to add words to
+ */
+export function addSuggestionWordsToTerms(suggestions, terms) {
+    for (const suggestion of suggestions) {
+        const words = suggestion.toLowerCase().split(/\s+/);
+        for (const word of words) {
+            if (word.length > 1) { // Skip single characters
+                terms.add(word);
+            }
+        }
+    }
+}
+
+/**
+ * Extract random sample of terms from dataset suggestions
+ * @param {Array} dataset - Dataset with suggestion entries
+ * @param {number} sampleSize - Number of terms to sample (default 50)
+ * @returns {Array} Array of sampled terms
+ */
+export function extractSeedTermsFromDataset(dataset, sampleSize = 50) {
+    if (!dataset || dataset.length === 0) {
+        return [];
+    }
+
+    // Extract all unique suggestions from the dataset
+    const allSuggestions = [...new Set(dataset.map(item => item.suggestion))];
+    
+    if (allSuggestions.length === 0) {
+        return [];
+    }
+
+    // Use the same logic as addSuggestionWordsToTerms
+    const terms = new Set();
+    addSuggestionWordsToTerms(allSuggestions, terms);
+
+    // Convert to array and shuffle
+    const wordsArray = Array.from(terms);
+    
+    if (wordsArray.length === 0) {
+        return [];
+    }
+
+    // Shuffle the array using Fisher-Yates algorithm
+    for (let i = wordsArray.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [wordsArray[i], wordsArray[j]] = [wordsArray[j], wordsArray[i]];
+    }
+
+    // Take up to sampleSize random terms
+    return wordsArray.slice(0, Math.min(sampleSize, wordsArray.length));
+}
+
 class QueryGenerator {
     constructor(seedTerms = SEED_TERMS, numQueries = NUM_QUERIES, progressCallback = null) {
         this.seedTerms = new Set(seedTerms);
@@ -118,14 +173,7 @@ class QueryGenerator {
                 this.doneQueries.add(query);
 
                 // Add suggestion words to terms for future queries
-                for (const suggestion of suggestions) {
-                    const words = suggestion.toLowerCase().split(/\s+/);
-                    for (const word of words) {
-                        if (word.length > 1) { // Skip single characters
-                            this.terms.add(word);
-                        }
-                    }
-                }
+                addSuggestionWordsToTerms(suggestions, this.terms);
 
                 console.log(`Added ${suggestions.length} suggestions. Total terms: ${this.terms.size}`);
 
@@ -254,7 +302,7 @@ async function run() {
 export { QueryGenerator, run };
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { QueryGenerator, run };
+    module.exports = { QueryGenerator, run, addSuggestionWordsToTerms, extractSeedTermsFromDataset };
 }
 
 // Auto-run if this is the main script
