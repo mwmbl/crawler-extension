@@ -1,4 +1,4 @@
-import { fetchGoogleResults } from './google-search.js';
+import { fetchSearchResults } from './search.js';
 import { retrieve } from './storage.js';
 
 const QUERY_URL = 'https://mwmbl.org/app/home?';
@@ -27,7 +27,7 @@ async function enhanceQuery() {
     const params = new URLSearchParams(window.location.search);
     const q = params.get('q');
     console.log("Query", q);
-    const results = await fetchGoogleResults(q);
+    const results = await fetchSearchResults(q);
     console.log("Results", results);
     const parameters = encodeParametersFromResultArray(q, results);
     console.log("Parameters", parameters.toString());

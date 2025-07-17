@@ -4,7 +4,7 @@
  */
 
 import { QueryGenerator, extractSeedTermsFromDataset } from "./queries.js";
-import { performGoogleSearch } from "./google-search.js";
+import { performSearch } from "./search.js";
 import { 
     isNewDay, 
     initializeNewDay, 
@@ -289,7 +289,7 @@ export class DailyScheduler {
             });
 
             // Perform the search
-            const searchResult = await performGoogleSearch(query);
+            const searchResult = await performSearch(query);
             
             // Add the result to storage
             const searchIndex = await addSearchResult(searchResult);
@@ -369,11 +369,11 @@ export class DailyScheduler {
      * Wait for the next day
      */
     async waitForNextDay() {
-        // Check every ten minutes if it's a new day
-        const tenMinutes = 10 * 60 * 1000;
+        // Check every five minutes if it's a new day
+        const waitPeriod = 5 * 60 * 1000;
         
         while (this.isRunning && !(await isNewDay())) {
-            await this.delay(tenMinutes);
+            await this.delay(waitPeriod);
         }
     }
 
