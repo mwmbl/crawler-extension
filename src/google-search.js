@@ -197,78 +197,53 @@ export async function fetchGoogleResults(query, start = 0) {
 }
 
 /**
- * Perform a Google search with retry logic and rate limiting
+ * Perform a Google search
  * @param {string} query - The search query
- * @param {number} maxRetries - Maximum number of retry attempts
  * @param {number} start - Starting result index for pagination
  * @returns {Promise<Object>} Search result object with query, results, and metadata
  */
-export async function performGoogleSearch(query, maxRetries = CONFIG.MAX_RETRIES || 3, start = 0) {
-    let lastError = null;
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            const startTime = Date.now();
-            const results = await fetchGoogleResults(query, start);
-            const endTime = Date.now();
-            
-            return {
-                query: query,
-                results: results,
-                timestamp: startTime,
-                duration: endTime - startTime,
-                success: true,
-                attempt: attempt,
-                resultCount: results.length,
-                start: start
-            };
-            
-        } catch (error) {
-            lastError = error;
-            console.warn(`Google search attempt ${attempt}/${maxRetries} failed for "${query}":`, error.message);
-            
-            // If it's a CAPTCHA error, don't retry immediately
-            if (error.message.includes('CAPTCHA')) {
-                console.warn('CAPTCHA detected, waiting longer before retry...');
-                if (attempt < maxRetries) {
-                    const delay = Math.min(5000 * Math.pow(2, attempt - 1), 30000);
-                    console.log(`Waiting ${delay}ms before retry due to CAPTCHA...`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                }
-            } else if (attempt < maxRetries) {
-                // Normal exponential backoff for other errors
-                const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
-                console.log(`Retrying in ${delay}ms...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
-            }
-        }
+export async function performGoogleSearch(query, start = 0) {
+    try {
+        const startTime = Date.now();
+        const results = await fetchGoogleResults(query, start);
+        const endTime = Date.now();
+        
+        return {
+            query: query,
+            results: results,
+            timestamp: startTime,
+            duration: endTime - startTime,
+            success: true,
+            resultCount: results.length,
+            start: start
+        };
+        
+    } catch (error) {
+        console.error(`Google search failed for "${query}":`, error.message);
+        
+        return {
+            query: query,
+            results: [],
+            timestamp: Date.now(),
+            duration: 0,
+            success: false,
+            error: {
+                name: error?.name || 'UnknownError',
+                message: error?.message || 'Unknown error occurred'
+            },
+            resultCount: 0,
+            start: start
+        };
     }
-    
-    // All attempts failed
-    return {
-        query: query,
-        results: [],
-        timestamp: Date.now(),
-        duration: 0,
-        success: false,
-        error: {
-            name: lastError?.name || 'UnknownError',
-            message: lastError?.message || 'Unknown error occurred'
-        },
-        attempt: maxRetries,
-        resultCount: 0,
-        start: start
-    };
 }
 
 /**
  * Perform multiple pages of Google search results
  * @param {string} query - The search query
  * @param {number} maxPages - Maximum number of pages to fetch
- * @param {number} maxRetries - Maximum retry attempts per page
  * @returns {Promise<Object>} Combined search results from all pages
  */
-export async function performMultiPageGoogleSearch(query, maxPages = 3, maxRetries = 3) {
+export async function performMultiPageGoogleSearch(query, maxPages = 3) {
     const allResults = [];
     let totalDuration = 0;
     let successfulPages = 0;
@@ -279,7 +254,7 @@ export async function performMultiPageGoogleSearch(query, maxPages = 3, maxRetri
         
         try {
             console.log(`Fetching page ${page + 1}/${maxPages} for query: "${query}"`);
-            const pageResult = await performGoogleSearch(query, maxRetries, start);
+            const pageResult = await performGoogleSearch(query, start);
             
             if (pageResult.success && pageResult.results.length > 0) {
                 allResults.push(...pageResult.results);
