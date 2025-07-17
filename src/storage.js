@@ -1,5 +1,5 @@
 const defaultValues = {
-  'crawl': true,
+  'generate_dataset': true,
   'google': false,
 }
 
@@ -20,4 +20,17 @@ export const retrieve = async (key) => {
 
 export const store = async (key, value) => {
   await chrome.storage.local.set({[key]: value});
+}
+
+/**
+ * Get or generate user ID for backend requests
+ * @returns {Promise<string>} User ID
+ */
+export const getUserId = async () => {
+  let userId = await retrieve('user_id');
+  if (!userId) {
+    userId = crypto.randomUUID();
+    await store('user_id', userId);
+  }
+  return userId;
 }
